@@ -54,13 +54,13 @@ VoronoiSystem = function(thecanvas) {
                 bounds[1] = points[0].y-1;
                 bounds[3] = points[0].y+1;
             }
-            else if ((maxx - minx)/(maxy - miny) < 4./3) {
-                var expected = 4*(maxy-miny)/3;
+            else if ((maxx - minx)/(maxy - miny) < 1) {
+                var expected = maxy-miny;
                 var diff = expected - (maxx-minx);
                 bounds = [minx - diff/2, miny, maxx + diff/2, maxy];
             }
-            else if ((maxx - minx)/(maxy - miny) > 4./3) {
-                var expected = 3*(maxx-minx)/4;
+            else if ((maxx - minx)/(maxy - miny) > 1) {
+                var expected = maxx-minx;
                 var diff = expected - (maxy-miny);
                 bounds = [minx, miny-diff/2, maxx, maxy+diff/2];
             }
@@ -121,6 +121,25 @@ VoronoiSystem = function(thecanvas) {
             ctx.stroke();
             // TODO: Draw voronoi lines
             // TODO: Draw beach lines
+            // Test circumcircle info
+            var p1 = points[points.length-1];
+            var p2 = points[points.length-2];
+            var p3 = points[points.length-3];
+            var c = that.toScreen(circumcenter(p1,p2,p3));
+            var r = circumradius(p1,p2,p3);
+            var o = that.toScreen({x:0, y:0}); var dist = that.toScreen({x:r,y:0});
+            var scale = Math.sqrt((o.x-dist.x)*(o.x-dist.x) + (o.y-dist.y)*(o.y-dist.y));
+            ctx.strokeStyle = "#ff0000";
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, scale, 0, Math.PI*2, true);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fillStyle = "#00ff00";
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, 5, 0, Math.PI*2, true);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
         }
     };
     return that;

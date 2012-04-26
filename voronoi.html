@@ -2,17 +2,17 @@
 <head>
     <title></title>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="closure-library/closure/goog/base.js"></script>
-    <script src="interaction.js"></script>
+    <script src="../closure-library/closure/goog/base.js"></script>
     <script src="geometry.js"></script>
+    <script src="interaction.js"></script>
     <script src="voronoi.js"></script>
     <script type="text/javascript">
         $(document).ready(function() {
             var sys = new VoronoiSystem($("#plane"));
+            sys.addPoint(-1,0);
             sys.addPoint(0,0);
-            sys.addPoint(1,1);
-            sys.addPoint(3,2);
-            sys.addPoint(-2,3);
+            sys.addPoint(1,0);
+            sys.addPoint(0,Math.sqrt(3));
             sys.addHandlers();
             sys.update();
         });
