@@ -121,25 +121,6 @@ VoronoiSystem = function(thecanvas) {
             ctx.stroke();
             // TODO: Draw voronoi lines
             // TODO: Draw beach lines
-            // Test circumcircle info
-            var p1 = points[points.length-1];
-            var p2 = points[points.length-2];
-            var p3 = points[points.length-3];
-            var c = that.toScreen(circumcenter(p1,p2,p3));
-            var r = circumradius(p1,p2,p3);
-            var o = that.toScreen({x:0, y:0}); var dist = that.toScreen({x:r,y:0});
-            var scale = Math.sqrt((o.x-dist.x)*(o.x-dist.x) + (o.y-dist.y)*(o.y-dist.y));
-            ctx.strokeStyle = "#ff0000";
-            ctx.beginPath();
-            ctx.arc(c.x, c.y, scale, 0, Math.PI*2, true);
-            ctx.closePath();
-            ctx.stroke();
-            ctx.fillStyle = "#00ff00";
-            ctx.beginPath();
-            ctx.arc(c.x, c.y, 5, 0, Math.PI*2, true);
-            ctx.closePath();
-            ctx.fill();
-            ctx.beginPath();
         }
     };
     return that;
