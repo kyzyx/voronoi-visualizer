@@ -189,10 +189,25 @@ Voronoi = function(points, bb) {
             }
             return false;
         },
+        debug:function(draw) {
+            // Highlight points on beach
+            $("#beach").get(0).value = "";
+            $("#evtq").get(0).value = "";
+            for (var c = beach.getMinimum(); c.next; c = c.next) {
+                draw.drawPoint(c.p, "#ffff00");
+                $("#beach").get(0).value += "(" + c.p.x + "," + c.p.y + ")\n";
+            }
+        },
         drawBeach:function(draw){
             if (beach.getCount() == 0) return;
-            else if (beach.getCount() == 1) {
+            else if (beach.getCount() == 1 || (beach.getCount() == 3 && 
+                        (beach.getMinimum().p.x == currx || 
+                        beach.getMinimum().next.p.x == currx))) {
+                console.log(beach.getCount());
                 var c = beach.getMinimum();
+                while (c.next && c.p.x == currx) {
+                    c = c.next;
+                }
                 var dx = currx - bbox[0];
                 var dx2 = c.p.x - bbox[0];
                 var yy = Math.sqrt(dx*dx - dx2*dx2);
@@ -222,7 +237,7 @@ Voronoi = function(points, bb) {
         },
         draw:function(draw) {
             // Add bbox edges
-            unboundededges = [];
+            /*unboundededges = [];
             goog.structs.forEach(edgemap, function(v,k,c) {
                 // Midpoint of p1,p2
                 var m = {x:(k.p1.x+k.p2.x)/2, y:(k.p1.y+k.p2.y)/2};
@@ -254,7 +269,7 @@ Voronoi = function(points, bb) {
                     }
                 }
                 unboundededges.push({p1:v,p2:closestp});
-            });
+            });*/
             draw.update();
             draw.drawVerticalLine(currx);
             //draw.drawEdges(edges);

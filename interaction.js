@@ -118,9 +118,9 @@ VoronoiSystem = function(thecanvas) {
             yy = bounds[1] + (bounds[3]-bounds[1])*(yy/h);
             return {x:xx, y:yy};
         },
-        drawPoint:function(p) {
+        drawPoint:function(p, color) {
             var sp = that.toScreen(p);
-            ctx.fillStyle = "#000000";
+            ctx.fillStyle = color?color:"#000000";
             ctx.beginPath();
             ctx.arc(sp.x, sp.y, 3, 0, Math.PI*2, true);
             ctx.closePath();
@@ -200,7 +200,10 @@ VoronoiSystem = function(thecanvas) {
         },
         step:function() {
             if (!diagram) diagram = new Voronoi(points,bounds);
-            if(diagram.step()) diagram.draw(that);
+            if(diagram.step()) {
+                diagram.draw(that);
+                diagram.debug(that);
+            }
         }
     };
     return that;
