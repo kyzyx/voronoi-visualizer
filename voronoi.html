@@ -30,6 +30,9 @@
             $("#step").click(function(e){
                 sys.step();
             });
+            $("#halfstep").click(function(e){
+                sys.halfstep();
+            });
         });
     </script>
 </head>
@@ -39,10 +42,11 @@
             <canvas id="plane" width="640px" height="480px" style="border: 1px solid black;"></canvas>
         </td>
         <td valign="top">
-            <input id="numpts"></input><input id="rand" type="button" value="Generate Random Points">
+            <input id="numpts" value="10"></input><input id="rand" type="button" value="Generate Random Points">
             <input type="button" id="step" value="Next event"><br>
-            <textarea id="evtq" rows="20" cols="80"></textarea><br>
-            <textarea id="beach" rows="20" cols="80"></textarea><br>
+            <input type="button" id="halfstep" value="Halfstep next event"><br>
+            <textarea id="evtq" rows="12" cols="80"></textarea><br>
+            <textarea id="beach" rows="12" cols="80"></textarea><br>
         </td>
     </tr></table>
 </body>

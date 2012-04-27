@@ -7,6 +7,8 @@ var SITE = 1;
 var ARC  = 2;
 
 Voronoi = function(points, bb) {
+    var currarc;
+    var pt;
     // Sweep line events
     var pq = new goog.structs.PriorityQueue();
     // A pq event is of two types: SITE or ARC
@@ -44,7 +46,9 @@ Voronoi = function(points, bb) {
         pq.enqueue(points[i].x, ev);
     }
     // Current sweep line location
-    var currx = pq.peek().x;
+    var currx = pq.isEmpty()?0:pq.peek().x;
+    // Clear debug screen
+    $("#beach").get(0).value = "";
 
     var that = {
         addEvent:function(arc) {
@@ -97,8 +101,8 @@ Voronoi = function(points, bb) {
                     ev = pq.dequeue();
                 } while (!ev.valid);
                 currx = ev.x;
-                console.log(currx);
-                var pt = ev.p;
+                console.log("EVENT: " + currx);
+                pt = ev.p;
                 if (ev.type == SITE) {
                     if (beach.getCount() == 0) {
                         beach.add({p:pt, d:0, next:null, prev:null});
@@ -106,6 +110,7 @@ Voronoi = function(points, bb) {
                     }
                     // Search beach for arc with same y-coord
                     var intersect = that.locateBeach(pt.x, pt.y);
+                    currarc = intersect;
                     var d = intersect.d;
 
                     var nextd, prevd;
@@ -125,6 +130,9 @@ Voronoi = function(points, bb) {
                     var uparc = 
                         {p:intersect.p, d:nextd, next:intersect.next};
                     var newarc = {p:pt, d:d, next:uparc, prev:lowarc}
+                    console.log(lowarc);
+                    console.log(newarc);
+                    console.log(uparc);
                     lowarc.next = newarc;
                     uparc.prev = newarc;
                     beach.add(newarc);
@@ -148,6 +156,7 @@ Voronoi = function(points, bb) {
                     that.addEvent(pq, qmap, uparc);
                 }
                 else if (ev.type == ARC) {
+                    currarc = null;
                     // Record edge information
                     var vp1 = {x:ev.arc.next.x, y:ev.arc.next.y};
                     var vp2 = {x:ev.arc.prev.x, y:ev.arc.prev.y};
@@ -193,17 +202,26 @@ Voronoi = function(points, bb) {
             // Highlight points on beach
             $("#beach").get(0).value = "";
             $("#evtq").get(0).value = "";
-            for (var c = beach.getMinimum(); c.next; c = c.next) {
+            for (var c = beach.getMinimum(); c; c = c.next) {
                 draw.drawPoint(c.p, "#ffff00");
-                $("#beach").get(0).value += "(" + c.p.x + "," + c.p.y + ")\n";
+                $("#beach").get(0).value += c.d + ": " + "(" + c.p.x + "," + c.p.y + ")\n";
+            }
+            beach.inOrderTraverse(function(c) {
+                $("#evtq").get(0).value += c.d + ": " +  "(" + c.p.x + "," + c.p.y + ")\n";
+            });
+            if (currarc) {
+                var c = currarc;
+                var dx = currx - bbox[0];
+                var dx2 = c.p.x - bbox[0];
+                var yy = Math.sqrt(dx*dx - dx2*dx2);
+                var ul = {x:bbox[0], y:c.p.y+yy};
+                var ll = {x:bbox[0], y:c.p.y-yy};
+                draw.drawArc(c.p, currx, ul, ll, "#ffff00");
             }
         },
         drawBeach:function(draw){
             if (beach.getCount() == 0) return;
-            else if (beach.getCount() == 1 || (beach.getCount() == 3 && 
-                        (beach.getMinimum().p.x == currx || 
-                        beach.getMinimum().next.p.x == currx))) {
-                console.log(beach.getCount());
+            else if (beach.getCount() == 1) { 
                 var c = beach.getMinimum();
                 while (c.next && c.p.x == currx) {
                     c = c.next;
@@ -224,8 +242,15 @@ Voronoi = function(points, bb) {
             var ll = {x:bbox[0], y:curr.p.y-yy};
             draw.drawArc(curr.p, currx, ul, ll);
             for (curr = curr.next; curr.next; curr = curr.next) {
-                ul = tangentCircle(curr.p, curr.next.p, currx);
-                ll = tangentCircle(curr.p, curr.prev.p, currx);
+                if (curr.next.p.x == curr.prev.p.x && 
+                    curr.next.p.y == curr.prev.p.y) {
+                    ul = tangentCircle(curr.p, curr.next.p, currx, false);
+                    ll = tangentCircle(curr.p, curr.prev.p, currx, true);
+                }
+                else {
+                    ul = tangentCircle(curr.p, curr.next.p, currx);
+                    ll = tangentCircle(curr.p, curr.prev.p, currx);
+                }
                 draw.drawArc(curr.p, currx, ul, ll);
             }
             dx = currx - bbox[0];
@@ -234,6 +259,11 @@ Voronoi = function(points, bb) {
             ul = {x:bbox[0], y:curr.p.y+yy};
             ll = tangentCircle(curr.p, curr.prev.p, currx);
             draw.drawArc(curr.p, currx, ul, ll);
+        },
+        halfstep:function() {
+            if (pq.isEmpty()) return false;
+            currx = (currx + pq.peek().x)*2./3;
+            return true;
         },
         draw:function(draw) {
             // Add bbox edges

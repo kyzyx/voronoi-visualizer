@@ -198,6 +198,13 @@ VoronoiSystem = function(thecanvas) {
         voronoi:function() {
             diagram = new Voronoi(points,bounds);
         },
+        halfstep:function() {
+            if (!diagram) diagram = new Voronoi(points,bounds);
+            if (diagram.halfstep()) {
+                diagram.draw(that);
+                diagram.debug(that);
+            }
+        },
         step:function() {
             if (!diagram) diagram = new Voronoi(points,bounds);
             if(diagram.step()) {
