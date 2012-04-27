@@ -154,6 +154,21 @@ VoronoiSystem = function(thecanvas) {
             //that.drawVerticalLine(linepos);
             // TODO: Draw voronoi lines
             // TODO: Draw beach lines
+        },
+        drawEdge:function(e) {
+            var p1 = that.toScreen(e.p1);
+            var p2 = that.toScreen(e.p2);
+            ctx.strokeStyle = "#0000ff";
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.closePath();
+            ctx.stroke();
+        },
+        drawEdges:function(edges) {
+            for (var i = 0; i < edges.length; ++i) {
+                that.drawEdge(edges[i]);
+            }
         }
     };
     return that;
