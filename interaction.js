@@ -135,7 +135,6 @@ VoronoiSystem = function(thecanvas) {
             ctx.stroke();
         },
         update:function() {
-            //that.canvasBounds();
             ctx.clearRect(0,0,w,h);
             // Draw points
             for (var i = 0; i < points.length; ++i) {
@@ -145,17 +144,6 @@ VoronoiSystem = function(thecanvas) {
             that.drawVerticalLine(linepos);
             // TODO: Draw voronoi lines
             // TODO: Draw beach lines
-            // Test tangent circle code
-            var xl = 1;
-            var p1 = points[points.length-1];
-            var p2 = points[points.length-2];
-            var tc = tangentCircle(p1, p2, xl);
-            that.drawPoint(p1);
-            that.drawPoint(p2);
-            that.drawPoint(tc);
-            that.drawVerticalLine(1);
-            that.drawCircle(tc, Math.abs(tc.x-xl))
-
         }
     };
     return that;
