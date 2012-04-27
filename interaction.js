@@ -9,7 +9,8 @@ VoronoiSystem = function(thecanvas) {
     var maxy = Number.NEGATIVE_INFINITY;
     var minx = Number.POSITIVE_INFINITY;
     var miny = Number.POSITIVE_INFINITY;
-    bounds = [0,0,1,1];
+    var diagram = null;
+    var bounds = [0,0,1,1];
 
     var that = {
         addHandlers:function() {
@@ -35,6 +36,7 @@ VoronoiSystem = function(thecanvas) {
             if (y > maxy) maxy = y;
             if (x < minx) minx = x;
             if (y < miny) miny = y;
+            diagram = null;
         },
         randomPoints:function(n) {
             points = [];
@@ -42,6 +44,7 @@ VoronoiSystem = function(thecanvas) {
             maxy = Number.NEGATIVE_INFINITY;
             minx = Number.POSITIVE_INFINITY;
             miny = Number.POSITIVE_INFINITY;
+            diagram = null;
             for (var i = 0; i < n; ++i) {
                 that.addPoint(Math.random(), Math.random());
             }
@@ -83,8 +86,6 @@ VoronoiSystem = function(thecanvas) {
             bounds[1] -= 0.05*(bounds[3]-bounds[1]);
             bounds[2] += 0.05*(bounds[2]-bounds[0]);
             bounds[3] += 0.05*(bounds[3]-bounds[1]);
-            console.log(maxx + " " + maxy + " " + minx + " " + miny);
-            console.log(bounds);
         },
         resize:function() {
             w = $(window).width()*0.9;
@@ -169,6 +170,38 @@ VoronoiSystem = function(thecanvas) {
             for (var i = 0; i < edges.length; ++i) {
                 that.drawEdge(edges[i]);
             }
+        },
+        // Ref: http://alecmce.com/as3/parabolas-and-quadratic-bezier-curves
+        drawArc:function(focus, directrix, p1, p2) {
+            sp1 = that.toScreen(p1);
+            sp2 = that.toScreen(p2);
+
+            ctx.strokeStyle = "#ff00ff";
+            ctx.beginPath();
+            if (p1.y == p2.y) {
+                sf = that.toScreen(focus);
+                ctx.moveTo(sp1.x, sp1.y);
+                ctx.lineTo(sf.x, sf.y);
+                console.log(p1.x + "," + p1.y + "-->" + focus.x + "," + focus.y);
+            }
+            else {
+                var q1 = {x:directrix,y:p1.y};
+                var q2 = {x:directrix,y:p2.y};
+                var m1 = {x:(q1.x+focus.x)/2,y:(q1.y+focus.y)/2};
+                var m2 = {x:(q2.x+focus.x)/2,y:(q2.y+focus.y)/2};
+                var control = intersection(p1,m1,p2,m2);
+                var sc = that.toScreen(control);
+                ctx.moveTo(sp1.x, sp1.y);
+                ctx.quadraticCurveTo(sc.x, sc.y, sp2.x, sp2.y);
+            }
+            ctx.stroke();
+        },
+        voronoi:function() {
+            diagram = new Voronoi(points,bounds);
+        },
+        step:function() {
+            if (!diagram) diagram = new Voronoi(points,bounds);
+            if(diagram.step()) diagram.draw(that);
         }
     };
     return that;

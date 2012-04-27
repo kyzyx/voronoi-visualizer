@@ -4,8 +4,8 @@
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script src="../closure-library/closure/goog/base.js"></script>
     <script src="geometry.js"></script>
-    <script src="interaction.js"></script>
     <script src="voronoi.js"></script>
+    <script src="interaction.js"></script>
     <script type="text/javascript">
         $(document).ready(function() {
             var sys = new VoronoiSystem($("#plane"));
@@ -25,6 +25,10 @@
                 sys.resize();
                 sys.canvasBounds();
                 sys.update();
+                sys.voronoi();
+            });
+            $("#step").click(function(e){
+                sys.step();
             });
         });
     </script>
@@ -36,6 +40,7 @@
         </td>
         <td>
             <input id="numpts"></input><input id="rand" type="button" value="Generate Random Points">
+            <input type="button" id="step" value="Next event">
         </td>
     </tr></table>
 </body>
