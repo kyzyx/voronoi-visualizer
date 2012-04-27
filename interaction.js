@@ -156,10 +156,10 @@ VoronoiSystem = function(thecanvas) {
             // TODO: Draw voronoi lines
             // TODO: Draw beach lines
         },
-        drawEdge:function(e) {
+        drawEdge:function(e, color) {
             var p1 = that.toScreen(e.p1);
             var p2 = that.toScreen(e.p2);
-            ctx.strokeStyle = "#0000ff";
+            ctx.strokeStyle = color?color:"#0000ff";
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
