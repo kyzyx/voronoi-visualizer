@@ -20,7 +20,6 @@ VoronoiSystem = function(thecanvas) {
             thecanvas.click(function(e) {
                 var x = e.pageX - canvas.offsetLeft;
                 var y = e.pageY - canvas.offsetTop;
-                var tmp = that.fromScreen(x, y);
                 that.addPoint(that.fromScreen(x, y));
                 linepos = bounds[0];
                 that.update();
@@ -36,6 +35,16 @@ VoronoiSystem = function(thecanvas) {
             if (y > maxy) maxy = y;
             if (x < minx) minx = x;
             if (y < miny) miny = y;
+        },
+        randomPoints:function(n) {
+            points = [];
+            maxx = Number.NEGATIVE_INFINITY;
+            maxy = Number.NEGATIVE_INFINITY;
+            minx = Number.POSITIVE_INFINITY;
+            miny = Number.POSITIVE_INFINITY;
+            for (var i = 0; i < n; ++i) {
+                that.addPoint(Math.random(), Math.random());
+            }
         },
         refreshBounds:function() {
             for (var i = 0; i < points.length; ++i) {
@@ -78,14 +87,15 @@ VoronoiSystem = function(thecanvas) {
             console.log(bounds);
         },
         resize:function() {
-            w = $(window).width()*0.8;
-            h = $(window).height()*0.8;
+            w = $(window).width()*0.9;
+            h = $(window).height()*0.9;
             w = Math.min(w,h);
             h = w;
             thecanvas.width(w);
             thecanvas.height(h);
             canvas.width = w;
             canvas.height = h;
+            that.update();
         },
         toScreen:function(x,y){
             if (y === undefined) {
@@ -111,7 +121,7 @@ VoronoiSystem = function(thecanvas) {
             var sp = that.toScreen(p);
             ctx.fillStyle = "#000000";
             ctx.beginPath();
-            ctx.arc(sp.x, sp.y, 5, 0, Math.PI*2, true);
+            ctx.arc(sp.x, sp.y, 3, 0, Math.PI*2, true);
             ctx.closePath();
             ctx.fill();
         },
@@ -141,7 +151,7 @@ VoronoiSystem = function(thecanvas) {
                 that.drawPoint(points[i]);
             }
             // Draw sweep line
-            that.drawVerticalLine(linepos);
+            //that.drawVerticalLine(linepos);
             // TODO: Draw voronoi lines
             // TODO: Draw beach lines
         }

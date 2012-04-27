@@ -17,10 +17,26 @@
             sys.addPoint(-0.5,1);
             sys.addHandlers();
             sys.update();
+
+            $("#rand").click(function(e){
+                var n = parseInt($("#numpts").get(0).value);
+                if (n < 2) return;
+                sys.randomPoints(n);
+                sys.resize();
+                sys.canvasBounds();
+                sys.update();
+            });
         });
     </script>
 </head>
 <body>
-    <canvas id="plane" width="640px" height="480px" style="border: 1px solid black;"></canvas>
+    <table><tr>
+        <td>
+            <canvas id="plane" width="640px" height="480px" style="border: 1px solid black;"></canvas>
+        </td>
+        <td>
+            <input id="numpts"></input><input id="rand" type="button" value="Generate Random Points">
+        </td>
+    </tr></table>
 </body>
 </html>
