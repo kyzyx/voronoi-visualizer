@@ -53,7 +53,8 @@ function circumradius(p1, p2, p3) {
 
 // Calculates the center of a circle tangent to a vertical line x = xl
 // that goes through p1 and p2
-function tangentCircle(p1, p2, xl) {
+function tangentCircle(p1, p2, xl, second) {
+    if (second === undefined) second = false;
     // Calculate equation of perpendicular bisector
     var pp1 = {x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2};
     var pv = {x:(p1.y-p2.y),y:(p2.x-p1.x)};
@@ -61,6 +62,13 @@ function tangentCircle(p1, p2, xl) {
     var A = pp1.y - pp2.y;
     var B = pp2.x - pp1.x;
     var C = A*pp1.x + B*pp1.y;
+
+    if (p1.x == xl) {
+        return intersection(pp1, pp2, p1, {x:p1.x-100,y:p1.y});
+    }
+    if (p2.x == xl) {
+        return intersection(pp1, pp2, p2, {x:p2.x-100,y:p2.y});
+    }
 
     // Algebraically, the distance to the line is equal to the distance to p1.
     // (x-xl)^2 = (y-y1)^2 + (x-x1)^2
@@ -83,7 +91,7 @@ function tangentCircle(p1, p2, xl) {
         var y1 = -Math.sqrt(b*b - 4*a*c) - b;
         y1 /= 2*a;
         var x1 = (C - B*y1)/A;
-        if (x1 > x) {
+        if ((x1 > x && !second) || (x1 < x && second)) {
             y = y1;
             x = x1;
         }
