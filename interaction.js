@@ -64,10 +64,18 @@ VoronoiSystem = function(thecanvas) {
                 var diff = expected - (maxy-miny);
                 bounds = [minx, miny-diff/2, maxx, maxy+diff/2];
             }
+            else {
+                bounds[0] = minx;
+                bounds[1] = miny;
+                bounds[2] = maxx;
+                bounds[3] = maxy;
+            }
             bounds[0] -= 0.05*(bounds[2]-bounds[0]);
             bounds[1] -= 0.05*(bounds[3]-bounds[1]);
             bounds[2] += 0.05*(bounds[2]-bounds[0]);
             bounds[3] += 0.05*(bounds[3]-bounds[1]);
+            console.log(maxx + " " + maxy + " " + minx + " " + miny);
+            console.log(bounds);
         },
         resize:function() {
             w = $(window).width()*0.8;
@@ -99,28 +107,55 @@ VoronoiSystem = function(thecanvas) {
             yy = bounds[1] + (bounds[3]-bounds[1])*(yy/h);
             return {x:xx, y:yy};
         },
-        update:function() {
-            //that.canvasBounds();
-            ctx.clearRect(0,0,w,h);
-            // Draw points
-            for (var i = 0; i < points.length; ++i) {
-                var coords = that.toScreen(points[i]);
-                ctx.fillStyle = "#000000";
-                ctx.beginPath();
-                ctx.arc(coords.x, coords.y, 5, 0, Math.PI*2, true);
-                ctx.closePath();
-                ctx.fill();
-            }
-            // Draw sweep line
-            var l = that.toScreen(linepos, 0);
+        drawPoint:function(p) {
+            var sp = that.toScreen(p);
+            ctx.fillStyle = "#000000";
+            ctx.beginPath();
+            ctx.arc(sp.x, sp.y, 5, 0, Math.PI*2, true);
+            ctx.closePath();
+            ctx.fill();
+        },
+        drawVerticalLine:function(x) {
+            var l = that.toScreen(x, 0);
             ctx.strokeStyle = "#ff0000";
             ctx.beginPath();
             ctx.moveTo(l.x, 0);
             ctx.lineTo(l.x, h);
             ctx.closePath();
             ctx.stroke();
+        },
+        drawCircle:function(p, r) {
+            var sp = that.toScreen(p);
+            var o = that.toScreen({x:0, y:0}); var d = that.toScreen({x:r,y:0});
+            var rr = Math.sqrt((o.x-d.x)*(o.x-d.x) + (o.y-d.y)*(o.y-d.y));
+            ctx.strokeStyle = "#000000";
+            ctx.beginPath();
+            ctx.arc(sp.x, sp.y, rr, 0, Math.PI*2, true);
+            ctx.closePath();
+            ctx.stroke();
+        },
+        update:function() {
+            //that.canvasBounds();
+            ctx.clearRect(0,0,w,h);
+            // Draw points
+            for (var i = 0; i < points.length; ++i) {
+                that.drawPoint(points[i]);
+            }
+            // Draw sweep line
+            that.drawVerticalLine(linepos);
             // TODO: Draw voronoi lines
             // TODO: Draw beach lines
+            // Test tangent circle code
+            var xl = 1;
+            var p1 = points[points.length-1];
+            var p2 = points[points.length-2];
+            var tc = tangentCircle(p1, p2, xl);
+            that.drawPoint(p1);
+            that.drawPoint(p2);
+            that.drawPoint(tc);
+            that.drawVerticalLine(1);
+            that.drawCircle(tc, Math.abs(tc.x-xl))
+
         }
     };
     return that;

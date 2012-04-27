@@ -9,10 +9,12 @@
     <script type="text/javascript">
         $(document).ready(function() {
             var sys = new VoronoiSystem($("#plane"));
-            sys.addPoint(-1,0);
+            sys.addPoint(-2,2);
+            sys.addPoint(2,2);
+            sys.addPoint(-2,-2);
+            sys.addPoint(2,-2);
             sys.addPoint(0,0);
-            sys.addPoint(1,0);
-            sys.addPoint(0,Math.sqrt(3));
+            sys.addPoint(-0.5,1);
             sys.addHandlers();
             sys.update();
         });
