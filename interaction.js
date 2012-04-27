@@ -126,20 +126,20 @@ VoronoiSystem = function(thecanvas) {
             ctx.closePath();
             ctx.fill();
         },
-        drawVerticalLine:function(x) {
+        drawVerticalLine:function(x, color) {
             var l = that.toScreen(x, 0);
-            ctx.strokeStyle = "#ff0000";
+            ctx.strokeStyle = color?color:"#ff0000";
             ctx.beginPath();
             ctx.moveTo(l.x, 0);
             ctx.lineTo(l.x, h);
             ctx.closePath();
             ctx.stroke();
         },
-        drawCircle:function(p, r) {
+        drawCircle:function(p, r, color) {
             var sp = that.toScreen(p);
             var o = that.toScreen({x:0, y:0}); var d = that.toScreen({x:r,y:0});
             var rr = Math.sqrt((o.x-d.x)*(o.x-d.x) + (o.y-d.y)*(o.y-d.y));
-            ctx.strokeStyle = "#000000";
+            ctx.strokeStyle = color?color:"#000000";
             ctx.beginPath();
             ctx.arc(sp.x, sp.y, rr, 0, Math.PI*2, true);
             ctx.closePath();
@@ -172,17 +172,16 @@ VoronoiSystem = function(thecanvas) {
             }
         },
         // Ref: http://alecmce.com/as3/parabolas-and-quadratic-bezier-curves
-        drawArc:function(focus, directrix, p1, p2) {
+        drawArc:function(focus, directrix, p1, p2, color) {
             sp1 = that.toScreen(p1);
             sp2 = that.toScreen(p2);
 
-            ctx.strokeStyle = "#ff00ff";
+            ctx.strokeStyle = color?color:"#ff00ff";
             ctx.beginPath();
             if (p1.y == p2.y) {
                 sf = that.toScreen(focus);
                 ctx.moveTo(sp1.x, sp1.y);
                 ctx.lineTo(sf.x, sf.y);
-                console.log(p1.x + "," + p1.y + "-->" + focus.x + "," + focus.y);
             }
             else {
                 var q1 = {x:directrix,y:p1.y};

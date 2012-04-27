@@ -194,23 +194,29 @@ Voronoi = function(points, bb) {
             else if (beach.getCount() == 1) {
                 var c = beach.getMinimum();
                 var dx = currx - bbox[0];
-                var dx2 = c.x - bbox[0];
+                var dx2 = c.p.x - bbox[0];
                 var yy = Math.sqrt(dx*dx - dx2*dx2);
-                a = {x:bbox[0], y:c.p.y+(currx-c.p.x)};
-                b = {x:bbox[0], y:c.p.y-(currx-c.p.x)};
-                draw.drawArc(c.p, currx, a, b);
+                var ul = {x:bbox[0], y:c.p.y+yy};
+                var ll = {x:bbox[0], y:c.p.y-yy};
+                draw.drawArc(c.p, currx, ul, ll);
                 return;
             }
             var curr = beach.getMinimum();
             var ul = tangentCircle(curr.p, curr.next.p, currx);
-            var ll = {x:curr.p.x,y:curr.p.y-(currx-curr.p.x)};
+            var dx = currx - bbox[0];
+            var dx2 = curr.p.x - bbox[0];
+            var yy = Math.sqrt(dx*dx - dx2*dx2);
+            var ll = {x:bbox[0], y:curr.p.y-yy};
             draw.drawArc(curr.p, currx, ul, ll);
             for (curr = curr.next; curr.next; curr = curr.next) {
                 ul = tangentCircle(curr.p, curr.next.p, currx);
                 ll = tangentCircle(curr.p, curr.prev.p, currx);
                 draw.drawArc(curr.p, currx, ul, ll);
             }
-            ul = {x:curr.p.x,y:curr.p.y+(currx-curr.p.x)};
+            dx = currx - bbox[0];
+            dx2 = curr.p.x - bbox[0];
+            yy = Math.sqrt(dx*dx - dx2*dx2);
+            ul = {x:bbox[0], y:curr.p.y+yy};
             ll = tangentCircle(curr.p, curr.prev.p, currx);
             draw.drawArc(curr.p, currx, ul, ll);
         },

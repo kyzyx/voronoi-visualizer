@@ -80,6 +80,13 @@ function tangentCircle(p1, p2, xl) {
         y = Math.sqrt(b*b - 4*a*c) - b;
         y /= 2*a;
         x = (C - B*y)/A;
+        var y1 = -Math.sqrt(b*b - 4*a*c) - b;
+        y1 /= 2*a;
+        var x1 = (C - B*y1)/A;
+        if (x1 > x) {
+            y = y1;
+            x = x1;
+        }
     }
     return {x:x, y:y};
 }
