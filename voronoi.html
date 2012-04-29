@@ -35,7 +35,12 @@
                 if (n < 2) return;
                 sys.randomPoints(n);
                 sys.resize();
-                sys.canvasBounds();
+                sys.fitBounds();
+                var b = sys.bounds();
+                $("#xmin").get(0).value = b[0];
+                $("#ymin").get(0).value = b[1];
+                $("#xmax").get(0).value = b[2];
+                $("#ymax").get(0).value = b[3];
                 sys.update();
                 sys.voronoi();
             });
@@ -77,9 +82,9 @@
             <canvas id="plane" width="640px" height="480px" style="border: 1px solid black;"></canvas>
         </td>
         <td valign="top">
-            <input id="numpts" value="10"></input><input id="rand" type="button" value="Generate Random Points">
-            <input type="button" id="step" value="Next event"><br>
-            <input type="button" id="halfstep" value="Halfstep next event"><br>
+            <input id="numpts" value="10" size=2></input><input id="rand" type="button" value="Generate Random Points"><br>
+            <input type="button" id="step" value="Next event">
+            <input type="button" id="halfstep" value="Halfstep next event">
             <input type="button" id="restart" value="Restart"><br>
             <textarea id="evtq" rows="12" cols="80"></textarea><br>
             <textarea id="beach" rows="10" cols="80"></textarea><br>

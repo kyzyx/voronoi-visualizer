@@ -59,7 +59,7 @@ VoronoiSystem = function(thecanvas) {
         },
         bounds:function(b) {
             if (!b) return bounds;
-            for (var i = 0; i < 4; ++i) bounds[i] = b[i];
+            for (var i = 0; i < 4; ++i) bounds[i] = parseInt(b[i]);
             return bounds;
         },
         fitBounds:function() {
