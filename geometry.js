@@ -1,3 +1,4 @@
+var EPS = 1e-6;
 function intersection(p1,p2,p3,p4) {
     // Determine line equations
     // |A1 B1| |x|   |C1|
@@ -53,8 +54,7 @@ function circumradius(p1, p2, p3) {
 
 // Calculates the center of a circle tangent to a vertical line x = xl
 // that goes through p1 and p2
-function tangentCircle(p1, p2, xl, second) {
-    if (second === undefined) second = false;
+function tangentCircle(p1, p2, xl) {
     // Calculate equation of perpendicular bisector
     var pp1 = {x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2};
     var pv = {x:(p1.y-p2.y),y:(p2.x-p1.x)};
@@ -91,7 +91,7 @@ function tangentCircle(p1, p2, xl, second) {
         var y1 = -Math.sqrt(b*b - 4*a*c) - b;
         y1 /= 2*a;
         var x1 = (C - B*y1)/A;
-        if ((x1 > x && !second) || (x1 < x && second)) {
+        if ((y1 < y && p1.x < p2.x) || (y1 > y && p1.x > p2.x)) {
             y = y1;
             x = x1;
         }
