@@ -195,6 +195,16 @@ VoronoiSystem = function(thecanvas) {
                 var m1 = {x:(q1.x+focus.x)/2,y:(q1.y+focus.y)/2};
                 var m2 = {x:(q2.x+focus.x)/2,y:(q2.y+focus.y)/2};
                 var control = intersection(p1,m1,p2,m2);
+                // Edge case: if one of the points has the same y-coord as the focus
+                if (!control) {
+                    p1.y += EPS;
+                    p2.y += EPS;
+                    q1 = {x:directrix,y:p1.y};
+                    q2 = {x:directrix,y:p2.y};
+                    m1 = {x:(q1.x+focus.x)/2,y:(q1.y+focus.y)/2};
+                    m2 = {x:(q2.x+focus.x)/2,y:(q2.y+focus.y)/2};
+                    control = intersection(p1,m1,p2,m2);
+                }
                 var sc = that.toScreen(control);
                 ctx.moveTo(sp1.x, sp1.y);
                 ctx.quadraticCurveTo(sc.x, sc.y, sp2.x, sp2.y);

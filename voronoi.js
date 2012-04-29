@@ -49,6 +49,8 @@ Voronoi = function(points, bb) {
     var currx = pq.isEmpty()?0:pq.peek().x;
     // Clear debug screen
     $("#beach").get(0).value = "";
+    $("#beach2").get(0).value = "";
+    $("#evtq").get(0).value = "";
 
     var that = {
         arcKey:function(arc) {
@@ -58,12 +60,28 @@ Voronoi = function(points, bb) {
         },
         addEvent:function(arc) {
             if (!arc.prev || !arc.next) return;
+            // If the site is in front of both of its neighbors, then it can't
+            // be hidden.
+            if (arc.p.x > arc.prev.p.x && arc.p.x > arc.next.p.x) return;
             var ccenter = circumcenter(arc.p, arc.prev.p, arc.next.p);
+            // If sites are collinear, then the edges cannot intersect
+            if (!ccenter) return;
             var cradius = circumradius(arc.p, arc.prev.p, arc.next.p);
             var x = ccenter.x + cradius;
+            // If this event has passed, it is invalid
+            if (x < currx) return;
             var ev = {x:x, arc:arc, v:ccenter, type:ARC, valid:true};
             qmap.set(arc.key, ev);
             pq.enqueue(ev.x, ev);
+        },
+        isValidArcEvent:function(arc) {
+            var ccenter = circumcenter(arc.p, arc.prev.p, arc.next.p);
+            if (!ccenter) return false;
+            var cradius = circumradius(arc.p, arc.prev.p, arc.next.p);
+            var ul = tangentCircle(arc.p, arc.next.p, currx);
+            var ll = tangentCircle(arc.prev.p, arc.p, currx);
+            if (dist2(ul, ccenter) > cradius*cradius || dist2(ll, ccenter) > cradius*cradius) return false;
+            return true;
         },
 
         // Perform a binary search by walking down the AVL tree
@@ -104,7 +122,8 @@ Voronoi = function(points, bb) {
                 var ev;
                 do {
                     ev = pq.dequeue();
-                } while (!ev.valid);
+                } while (!pq.isEmpty() && !ev.valid);
+                if (pq.isEmpty()) return false;
                 currx = ev.x;
                 console.log("EVENT: " + currx);
                 pt = ev.p;
@@ -120,11 +139,13 @@ Voronoi = function(points, bb) {
 
                     var nextd, prevd;
                     var next = intersect.next;
-                    if (next) nextd = (d + next.d)/2;
-                    else      nextd = 4096;
                     var prev = intersect.prev;
-                    if (prev) prevd = (d + prev.d)/2;
-                    else      prevd = -4096;
+                    if (next)      nextd = (d + next.d)/2;
+                    else if (prev) nextd = prev.d + 2*(d-prev.d);
+                    else           nextd = 4096;
+                    if (prev)      prevd = (d + prev.d)/2;
+                    else if (next) prevd = next.d - 2*(next.d-d);
+                    else           prevd = -4096;
 
                     // Remove intersected arc
                     beach.remove(intersect);
@@ -145,21 +166,19 @@ Voronoi = function(points, bb) {
                     beach.add(newarc);
                     beach.add(lowarc);
                     beach.add(uparc);
+
                     // Invalidate ARC event with old arc
                     var delev = qmap.get(intersect.key);
-                    if (delev) {
-                        var s = "Invalidating event: ";
-                        s += delev.x + ":" + delev.arc.p.x + "," + delev.arc.p.y;
-                        s += " from arc " + intersect.p.x + "," + intersect.p.y;
-                        console.log(s);
-                        delev.valid = false;
-                    }
+                    if (delev) delev.valid = false;
 
                     // Add two new ARC events
                     that.addEvent(uparc);
                     that.addEvent(lowarc);
                 }
                 else if (ev.type == ARC) {
+                    if (!that.isValidArcEvent(ev.arc)) {
+                        return that.step();
+                    }
                     currarc = null;
                     // Record edge information
                     var vp1 = {x:ev.arc.next.x, y:ev.arc.next.y};
