@@ -212,16 +212,16 @@ VoronoiSystem = function(thecanvas) {
             ctx.stroke();
         },
         voronoi:function() {
-            diagram = new Voronoi(points,bounds);
+            diagram = new Voronoi(points);
         },
         halfstep:function() {
-            if (!diagram) diagram = new Voronoi(points,bounds);
+            if (!diagram) diagram = new Voronoi(points);
             if (diagram.halfstep()) {
                 that.updateVoronoi();
             }
         },
         step:function() {
-            if (!diagram) diagram = new Voronoi(points,bounds);
+            if (!diagram) diagram = new Voronoi(points);
             if(diagram.step()) {
                 that.updateVoronoi();
             }

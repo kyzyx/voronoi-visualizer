@@ -6,7 +6,7 @@ goog.require("goog.structs.AvlTree");
 var SITE = 1;
 var ARC  = 2;
 
-Voronoi = function(points, bb) {
+Voronoi = function(points) {
     var currarc;
     var pt;
     // Sweep line events
@@ -228,6 +228,7 @@ Voronoi = function(points, bb) {
             return false;
         },
         debug:function(draw) {
+            var bbox = draw.bounds();
             // Highlight points on beach
             $("#beach").get(0).value = "";
             $("#beach2").get(0).value = "";
@@ -280,16 +281,8 @@ Voronoi = function(points, bb) {
                 draw.drawArc(c.p, currx, ul, ll, "#ffff00");
             }
         },
-        color:function(red) {
-            red = parseInt(red);
-            var reds = red.toString(16);
-            if (reds.length == 1) reds = "0" + reds;
-            var blue = 255 - red;
-            var blues = blue.toString(16);
-            if (blues.length == 1) blues = "0" + blues;
-            return "#" + reds + "00" + blues;
-        },
         drawBeach:function(draw){
+            var bbox = draw.bounds();
             if (beach.getCount() == 0) return;
             else if (beach.getCount() == 1) { 
                 var c = beach.getMinimum();
@@ -304,27 +297,26 @@ Voronoi = function(points, bb) {
                 draw.drawArc(c.p, currx, ul, ll);
                 return;
             }
-            var curred = 0;
             var curr = beach.getMinimum();
             var ul = tangentCircle(curr.p, curr.next.p, currx);
             var dx = currx - bbox[0];
             var dx2 = curr.p.x - bbox[0];
             var yy = Math.sqrt(dx*dx - dx2*dx2);
             var ll = {x:bbox[0], y:curr.p.y-yy};
-            draw.drawArc(curr.p, currx, ul, ll, that.color(curred));
-            curred += 255./beach.getCount();
+            if (ul.x > bbox[0] && ul.y > bbox[1])
+                draw.drawArc(curr.p, currx, ul, ll);
             for (curr = curr.next; curr.next; curr = curr.next) {
                 ul = tangentCircle(curr.p, curr.next.p, currx);
                 ll = tangentCircle(curr.prev.p, curr.p, currx);
-                draw.drawArc(curr.p, currx, ul, ll, that.color(curred));
-                curred += 255./beach.getCount();
+                draw.drawArc(curr.p, currx, ul, ll);
             }
             dx = currx - bbox[0];
             dx2 = curr.p.x - bbox[0];
             yy = Math.sqrt(dx*dx - dx2*dx2);
             ul = {x:bbox[0], y:curr.p.y+yy};
             ll = tangentCircle(curr.prev.p, curr.p, currx);
-            draw.drawArc(curr.p, currx, ul, ll, "#ff0000");
+            if (ll.x > bbox[0] && ll.y < bbox[3])
+                draw.drawArc(curr.p, currx, ul, ll);
         },
         halfstep:function() {
             if (pq.isEmpty()) return false;
