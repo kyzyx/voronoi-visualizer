@@ -201,14 +201,46 @@ Voronoi = function(points, bb) {
         debug:function(draw) {
             // Highlight points on beach
             $("#beach").get(0).value = "";
+            $("#beach2").get(0).value = "";
             $("#evtq").get(0).value = "";
             for (var c = beach.getMinimum(); c; c = c.next) {
                 draw.drawPoint(c.p, "#ffff00");
                 $("#beach").get(0).value += c.d + ": " + "(" + c.p.x + "," + c.p.y + ")\n";
             }
             beach.inOrderTraverse(function(c) {
-                $("#evtq").get(0).value += c.d + ": " +  "(" + c.p.x + "," + c.p.y + ")\n";
+                $("#beach2").get(0).value += c.d + ": " +  "(" + c.p.x + "," + c.p.y + ")\n";
             });
+            var k = pq.getKeys();
+            var v = pq.getValues();
+            var kv = [];
+            for (var i = 0; i < k.length; ++i) {
+                kv[i] = {k:k[i], v:v[i]};
+            }
+            kv.sort(function(a,b) {return a.k - b.k});
+            for (var i = 0; i < kv.length; ++i) {
+                var s = "";
+                if (!kv[i].v.valid) s += "--";
+                s += kv[i].k + ":";
+                if (kv[i].v.type == ARC) {
+                    s += " Arc " + kv[i].v.arc.d + " ";
+                    s += kv[i].v.arc.p.x + "," + kv[i].v.arc.p.y;
+                }
+                else {
+                    s += " Point ";
+                    s += kv[i].v.p.x + "," + kv[i].v.p.y;
+                }
+                $("#evtq").get(0).value += s + "\n";
+            }
+            var next = pq.peek();
+            if (false && next.type == ARC) {
+                var c = next.arc;
+                var dx = currx - bbox[0];
+                var dx2 = c.p.x - bbox[0];
+                var yy = Math.sqrt(dx*dx - dx2*dx2);
+                var ul = {x:bbox[0], y:c.p.y+yy};
+                var ll = {x:bbox[0], y:c.p.y-yy};
+                draw.drawArc(c.p, currx, ul, ll, "#000000");
+            }
             if (currarc) {
                 var c = currarc;
                 var dx = currx - bbox[0];

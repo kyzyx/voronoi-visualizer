@@ -17,7 +17,7 @@ VoronoiSystem = function(thecanvas) {
             $(window).resize(that.resize);
             linepos = bounds[0];
             that.resize();
-            that.canvasBounds();
+            that.fitBounds();
             thecanvas.click(function(e) {
                 var x = e.pageX - canvas.offsetLeft;
                 var y = e.pageY - canvas.offsetTop;
@@ -57,7 +57,12 @@ VoronoiSystem = function(thecanvas) {
                 if (points[i].y < miny) miny = points[i].y;
             }
         },
-        canvasBounds:function() {
+        bounds:function(b) {
+            if (!b) return bounds;
+            for (var i = 0; i < 4; ++i) bounds[i] = b[i];
+            return bounds;
+        },
+        fitBounds:function() {
             if (maxx == minx) {
                 bounds[0] = points[0].x-1;
                 bounds[2] = points[0].x+1;
@@ -97,6 +102,7 @@ VoronoiSystem = function(thecanvas) {
             canvas.width = w;
             canvas.height = h;
             that.update();
+            that.updateVoronoi();
         },
         toScreen:function(x,y){
             if (y === undefined) {
@@ -173,13 +179,13 @@ VoronoiSystem = function(thecanvas) {
         },
         // Ref: http://alecmce.com/as3/parabolas-and-quadratic-bezier-curves
         drawArc:function(focus, directrix, p1, p2, color) {
-            sp1 = that.toScreen(p1);
-            sp2 = that.toScreen(p2);
+            var sp1 = that.toScreen(p1);
+            var sp2 = that.toScreen(p2);
 
             ctx.strokeStyle = color?color:"#ff00ff";
             ctx.beginPath();
-            if (p1.y == p2.y) {
-                sf = that.toScreen(focus);
+            if (Math.abs(p1.y - p2.y) < EPS) {
+                var sf = that.toScreen(focus);
                 ctx.moveTo(sp1.x, sp1.y);
                 ctx.lineTo(sf.x, sf.y);
             }
@@ -201,16 +207,19 @@ VoronoiSystem = function(thecanvas) {
         halfstep:function() {
             if (!diagram) diagram = new Voronoi(points,bounds);
             if (diagram.halfstep()) {
-                diagram.draw(that);
-                diagram.debug(that);
+                that.updateVoronoi();
             }
         },
         step:function() {
             if (!diagram) diagram = new Voronoi(points,bounds);
             if(diagram.step()) {
-                diagram.draw(that);
-                diagram.debug(that);
+                that.updateVoronoi();
             }
+        },
+        updateVoronoi:function() {
+            if (!diagram) return;
+            diagram.draw(that);
+            diagram.debug(that);
         }
     };
     return that;
