@@ -34,8 +34,7 @@ Voronoi = function(points) {
     // A list of edges ({p1,p2});
     var edges = [];
     var unboundededges = [];
-    // The bounding box of the points
-    var bbox = bb;
+    var point = points;
 
     // Initialize event queue
     for (var i = 0; i < points.length; ++i) {
@@ -261,24 +260,14 @@ Voronoi = function(points) {
                 }
                 $("#evtq").get(0).value += s + "\n";
             }
-            var next = pq.peek();
-            if (false && next.type == ARC) {
-                var c = next.arc;
+            for (var i = 0; i < point.length; ++i) {
+                var c = point[i];
                 var dx = currx - bbox[0];
-                var dx2 = c.p.x - bbox[0];
+                var dx2 = c.x - bbox[0];
                 var yy = Math.sqrt(dx*dx - dx2*dx2);
-                var ul = {x:bbox[0], y:c.p.y+yy};
-                var ll = {x:bbox[0], y:c.p.y-yy};
-                draw.drawArc(c.p, currx, ul, ll, "#000000");
-            }
-            if (currarc) {
-                var c = currarc;
-                var dx = currx - bbox[0];
-                var dx2 = c.p.x - bbox[0];
-                var yy = Math.sqrt(dx*dx - dx2*dx2);
-                var ul = {x:bbox[0], y:c.p.y+yy};
-                var ll = {x:bbox[0], y:c.p.y-yy};
-                draw.drawArc(c.p, currx, ul, ll, "#ffff00");
+                var ul = {x:bbox[0], y:c.y+yy};
+                var ll = {x:bbox[0], y:c.y-yy};
+                draw.drawArc(c, currx, ul, ll, "#ffff00");
             }
         },
         drawBeach:function(draw){
