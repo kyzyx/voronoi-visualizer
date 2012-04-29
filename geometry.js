@@ -11,8 +11,8 @@ function intersection(p1,p2,p3,p4) {
     B2 = p4.x - p3.x;
     C2 = A2*p3.x + B2*p3.y;
     // Solve for intersection
+    // Parallel lines:
     if (A1*B2 == B1*A2) {
-        console.log("Error computing intersection! Parallel lines!");
         return null;
     }
 
@@ -55,6 +55,14 @@ function circumradius(p1, p2, p3) {
 // Calculates the center of a circle tangent to a vertical line x = xl
 // that goes through p1 and p2
 function tangentCircle(p1, p2, xl) {
+    // Can't have both points on the line
+    //if (p1.x == p2.x && p2.x == xl) {
+        //return null;
+    //}
+    // Also can't have one point on either side of the line
+    //if ((p1.x < xl && p2.x > xl) || (p1.x > xl && p2.x < xl)) {
+        //return null;
+    //}
     // Calculate equation of perpendicular bisector
     var pp1 = {x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2};
     var pv = {x:(p1.y-p2.y),y:(p2.x-p1.x)};
