@@ -79,8 +79,10 @@ Voronoi = function(points) {
             var cradius = circumradius(arc.p, arc.prev.p, arc.next.p);
             var ul = tangentCircle(arc.p, arc.next.p, currx);
             var ll = tangentCircle(arc.prev.p, arc.p, currx);
-            if (dist2(ul, ccenter) > cradius*cradius || dist2(ll, ccenter) > cradius*cradius) return false;
-            return true;
+            if (Math.abs(ul.x - ll.x) < EPS && Math.abs(ul.y - ll.y) < EPS) {
+                return true;
+            }
+            return false;
         },
 
         // Perform a binary search by walking down the AVL tree
