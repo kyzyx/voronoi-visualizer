@@ -51,13 +51,18 @@ Voronoi = function(points, bb) {
     $("#beach").get(0).value = "";
 
     var that = {
+        arcKey:function(arc) {
+            var tmp = {i:arc.p, n:arc.next?arc.next.p:arc.next, p:arc.prev?arc.prev.p:arc.prev};
+            tmp.toString = function(){return JSON.stringify(tmp)};
+            return tmp;
+        },
         addEvent:function(arc) {
             if (!arc.prev || !arc.next) return;
             var ccenter = circumcenter(arc.p, arc.prev.p, arc.next.p);
             var cradius = circumradius(arc.p, arc.prev.p, arc.next.p);
             var x = ccenter.x + cradius;
             var ev = {x:x, arc:arc, v:ccenter, type:ARC, valid:true};
-            qmap.set(arc, ev);
+            qmap.set(arc.key, ev);
             pq.enqueue(ev.x, ev);
         },
 
@@ -130,30 +135,29 @@ Voronoi = function(points, bb) {
                     var uparc = 
                         {p:intersect.p, d:nextd, next:intersect.next};
                     var newarc = {p:pt, d:d, next:uparc, prev:lowarc}
-                    console.log(lowarc);
-                    console.log(newarc);
-                    console.log(uparc);
                     lowarc.next = newarc;
                     uparc.prev = newarc;
+                    if (intersect.prev) intersect.prev.next = lowarc;
+                    if (intersect.next) intersect.next.prev = uparc;
+                    newarc.key = that.arcKey(newarc);
+                    lowarc.key = that.arcKey(lowarc);
+                    uparc.key = that.arcKey(uparc);
                     beach.add(newarc);
                     beach.add(lowarc);
                     beach.add(uparc);
-                    // Invalidate 3 ARC events with old arc
-                    var delev;
-                    if (prev) {
-                        delev = qmap.get(prev);
-                        if (delev) delev.valid = false;
-                    }
-                    delev = qmap.get(intersect);
-                    if (delev) delev.valid = false;
-                    if (next) {
-                        delev = qmap.get(next);
-                        if (delev) delev.valid = false;
+                    // Invalidate ARC event with old arc
+                    var delev = qmap.get(intersect.key);
+                    if (delev) {
+                        var s = "Invalidating event: ";
+                        s += delev.x + ":" + delev.arc.p.x + "," + delev.arc.p.y;
+                        s += " from arc " + intersect.p.x + "," + intersect.p.y;
+                        console.log(s);
+                        delev.valid = false;
                     }
 
                     // Add two new ARC events
-                    that.addEvent(pq, qmap, lowarc);
-                    that.addEvent(pq, qmap, uparc);
+                    that.addEvent(uparc);
+                    that.addEvent(lowarc);
                 }
                 else if (ev.type == ARC) {
                     currarc = null;
@@ -184,15 +188,21 @@ Voronoi = function(points, bb) {
                     else edgemap.set(e3, ev.v);
                     // Delete the arc that disappeared
                     beach.remove(ev.arc);
-                    // Invalidate 3 ARC events with old arc
-                    if (ev.arc.prev) qmap.get(ev.arc.prev).valid = false;
-                    qmap.get(ev.arc).valid = false;
-                    if (ev.arc.next) qmap.get(ev.arc.next).valid = false;
-                    // Add two new ARC events
-                    ev.arc.prev.next = ev.arc.next;
-                    ev.arc.next.prev = ev.arc.prev;
-                    that.addEvent(pq, qmap, ev.arc.prev);
-                    that.addEvent(pq, qmap, ev.arc.next);
+                    // Invalidate 3 ARC events with old arc, and add new events
+                    if (ev.arc.prev) {
+                        var delev = qmap.get(ev.arc.prev.key);
+                        if (delev) delev.valid = false;
+                        ev.arc.prev.next = ev.arc.next;
+                        that.addEvent(ev.arc.prev);
+                    }
+                    if (ev.arc.next) {
+                        var delev = qmap.get(ev.arc.next.key);
+                        if (delev) delev.valid = false;
+                        ev.arc.next.prev = ev.arc.prev;
+                        that.addEvent(ev.arc.next);
+                    }
+                    var delev = qmap.get(ev.arc.key);
+                    if (delev) delev.valid = false;
                 }
                 return true;
             }
