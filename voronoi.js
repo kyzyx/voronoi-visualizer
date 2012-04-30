@@ -8,7 +8,7 @@ var ARC  = 2;
 
 Voronoi = function(points) {
     var point = points;
-    var pt;
+    var pt, ev;
     // Sweep line events
     var pq = new goog.structs.PriorityQueue();
     // A pq event is of two types: SITE or ARC
@@ -38,11 +38,11 @@ Voronoi = function(points) {
 
     // Initialize event queue
     for (var i = 0; i < points.length; ++i) {
-        var ev = {x:points[i].x,
+        var evt = {x:points[i].x,
                   y:points[i].y,
                   p:points[i],
                   type:SITE, valid:true};
-        pq.enqueue(points[i].x, ev);
+        pq.enqueue(points[i].x, evt);
     }
     // Current sweep line location
     var currx = pq.isEmpty()?0:pq.peek().x;
@@ -68,9 +68,9 @@ Voronoi = function(points) {
             var x = ccenter.x + cradius;
             // If this event has passed, it is invalid
             if (x < currx) return;
-            var ev = {x:x, arc:arc, v:ccenter, type:ARC, valid:true};
-            qmap.set(arc.key, ev);
-            pq.enqueue(ev.x, ev);
+            var evt = {x:x, arc:arc, v:ccenter, type:ARC, valid:true};
+            qmap.set(arc.key, evt);
+            pq.enqueue(evt.x, evt);
         },
         isValidArcEvent:function(arc) {
             var ccenter = circumcenter(arc.p, arc.prev.p, arc.next.p);
@@ -119,13 +119,11 @@ Voronoi = function(points) {
         },
         step:function() {
             if (!pq.isEmpty()) {
-                var ev;
                 do {
                     ev = pq.dequeue();
                 } while (!pq.isEmpty() && !ev.valid);
                 if (pq.isEmpty()) return false;
                 currx = ev.x;
-                console.log("EVENT: " + currx);
                 pt = ev.p;
                 if (ev.type == SITE) {
                     if (beach.getCount() == 0) {
@@ -178,7 +176,7 @@ Voronoi = function(points) {
                 }
                 else if (ev.type == ARC) {
                     if (!that.isValidArcEvent(ev.arc)) {
-                        return that.step();
+                        return true;
                     }
                     // Record edge information
                     var point = circumcenter(ev.arc.p, ev.arc.prev.p, ev.arc.next.p);
@@ -211,14 +209,25 @@ Voronoi = function(points) {
             }
             return false;
         },
+        moveline:function(x) {
+            if (ev && x < ev.x) return false;
+            while (!pq.isEmpty() && x > pq.peek().x) that.step();
+            currx = x;
+            return true;
+        },
+        getline:function() {
+            return currx;
+        },
         debug:function(draw) {
             var bbox = draw.bounds();
             // Highlight points on beach
             $("#beach").get(0).value = "";
             $("#evtq").get(0).value = "";
-            for (var c = beach.getMinimum(); c; c = c.next) {
-                draw.drawPoint(c.p, "#ffff00");
-                $("#beach").get(0).value += c.d + ": " + "(" + c.p.x + "," + c.p.y + ")\n";
+            if (beach.getCount()) {
+                for (var c = beach.getMinimum(); c; c = c.next) {
+                    draw.drawPoint(c.p, "#ffff00");
+                    $("#beach").get(0).value += c.d + ": " + "(" + c.p.x + "," + c.p.y + ")\n";
+                }
             }
             var k = pq.getKeys();
             var v = pq.getValues();
@@ -296,7 +305,7 @@ Voronoi = function(points) {
             draw.update();
             draw.drawVerticalLine(currx);
             that.drawBeach(draw);
-            if (beach.length < 2) return;
+            if (beach.getCount() < 2) return;
             // Keep track of which edges have been drawn
             var drawn = [];
             for (var i = 0; i < edges.length; ++i) drawn[i] = false;

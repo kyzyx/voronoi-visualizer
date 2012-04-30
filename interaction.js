@@ -1,7 +1,7 @@
-VoronoiSystem = function(thecanvas) {
+VoronoiSystem = function(thecanvas, theslider) {
     var points = [];
-    var linepos = 0;
     var canvas = thecanvas.get(0);
+    var slider = theslider.get(0);
     var ctx = canvas.getContext("2d");
     var w = thecanvas.height();
     var h = thecanvas.width();
@@ -15,15 +15,24 @@ VoronoiSystem = function(thecanvas) {
     var that = {
         addHandlers:function() {
             $(window).resize(that.resize);
-            linepos = bounds[0];
             that.resize();
             that.fitBounds();
             thecanvas.click(function(e) {
                 var x = e.pageX - canvas.offsetLeft;
                 var y = e.pageY - canvas.offsetTop;
                 that.addPoint(that.fromScreen(x, y));
-                linepos = bounds[0];
                 that.update();
+            });
+            theslider.bind("slide", function(e, ui) {
+                var x = (bounds[2]-bounds[0])*ui.value/theslider.slider("option","max") + bounds[0];
+                if (!diagram) that.voronoi();
+                if (diagram.moveline(x)) {
+                    that.updateVoronoi(that);
+                    return true;
+                }
+                else {
+                    return false;
+                }
             });
         },
         addPoint:function(x, y) {
@@ -48,6 +57,7 @@ VoronoiSystem = function(thecanvas) {
             for (var i = 0; i < n; ++i) {
                 that.addPoint(Math.random(), Math.random());
             }
+            slider.value = 0;
         },
         refreshBounds:function() {
             for (var i = 0; i < points.length; ++i) {
@@ -60,6 +70,7 @@ VoronoiSystem = function(thecanvas) {
         bounds:function(b) {
             if (!b) return bounds;
             for (var i = 0; i < 4; ++i) bounds[i] = parseInt(b[i]);
+            that.updateSlider();
             return bounds;
         },
         fitBounds:function() {
@@ -87,18 +98,19 @@ VoronoiSystem = function(thecanvas) {
                 bounds[2] = maxx;
                 bounds[3] = maxy;
             }
-            bounds[0] -= 0.05*(bounds[2]-bounds[0]);
-            bounds[1] -= 0.05*(bounds[3]-bounds[1]);
-            bounds[2] += 0.05*(bounds[2]-bounds[0]);
-            bounds[3] += 0.05*(bounds[3]-bounds[1]);
+            bounds[0] -= 0.1*(bounds[2]-bounds[0]);
+            bounds[1] -= 0.1*(bounds[3]-bounds[1]);
+            bounds[2] += 0.1*(bounds[2]-bounds[0]);
+            bounds[3] += 0.1*(bounds[3]-bounds[1]);
         },
         resize:function() {
-            w = $(window).width()*0.9;
-            h = $(window).height()*0.9;
+            w = $(window).width()*0.85;
+            h = $(window).height()*0.85;
             w = Math.min(w,h);
             h = w;
             thecanvas.width(w);
             thecanvas.height(h);
+            theslider.width(w);
             canvas.width = w;
             canvas.height = h;
             that.update();
@@ -124,6 +136,14 @@ VoronoiSystem = function(thecanvas) {
             yy = bounds[1] + (bounds[3]-bounds[1])*(yy/h);
             return {x:xx, y:yy};
         },
+        update:function() {
+            ctx.clearRect(0,0,w,h);
+            // Draw points
+            for (var i = 0; i < points.length; ++i) {
+                that.drawPoint(points[i]);
+            }
+        },
+        // DRAW FUNCTIONS
         drawPoint:function(p, color) {
             var sp = that.toScreen(p);
             ctx.fillStyle = color?color:"#000000";
@@ -150,17 +170,6 @@ VoronoiSystem = function(thecanvas) {
             ctx.arc(sp.x, sp.y, rr, 0, Math.PI*2, true);
             ctx.closePath();
             ctx.stroke();
-        },
-        update:function() {
-            ctx.clearRect(0,0,w,h);
-            // Draw points
-            for (var i = 0; i < points.length; ++i) {
-                that.drawPoint(points[i]);
-            }
-            // Draw sweep line
-            //that.drawVerticalLine(linepos);
-            // TODO: Draw voronoi lines
-            // TODO: Draw beach lines
         },
         drawEdge:function(e, color) {
             var p1 = that.toScreen(e.p1);
@@ -211,18 +220,28 @@ VoronoiSystem = function(thecanvas) {
             }
             ctx.stroke();
         },
+        // VORONOI INTERACTION FUNCTIONS
+        updateSlider:function() {
+            var x = diagram.getline();
+            var val = theslider.slider("option","max")*(x - bounds[0])/(bounds[2]-bounds[0]);
+            if (val < 0) val = 0;
+            if (val > theslider.slider("option","max")) val = theslider.slider("option","max");
+            theslider.slider("option","value", val);
+        },
         voronoi:function() {
             diagram = new Voronoi(points);
         },
         halfstep:function() {
             if (!diagram) diagram = new Voronoi(points);
             if (diagram.halfstep()) {
+                that.updateSlider();
                 that.updateVoronoi();
             }
         },
         step:function() {
             if (!diagram) diagram = new Voronoi(points);
             if(diagram.step()) {
+                that.updateSlider();
                 that.updateVoronoi();
             }
         },
@@ -230,7 +249,7 @@ VoronoiSystem = function(thecanvas) {
             if (!diagram) return;
             diagram.draw(that);
             diagram.debug(that);
-        }
+        },
     };
     return that;
 }
