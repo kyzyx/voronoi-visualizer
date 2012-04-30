@@ -151,12 +151,12 @@ Voronoi = function(points) {
 
                     // Insert two new subarcs plus the newly constructed arc
                     var index = edges.length;
-                    edges.push({vertices:[], points:[pt, intersect.p]});
                     var lowarc = 
                         {p:intersect.p, d:prevd, prev:intersect.prev, edge:index};
                     var uparc = 
                         {p:intersect.p, d:nextd, next:intersect.next, edge:intersect.edge};
                     var newarc = {p:pt, d:d, next:uparc, prev:lowarc, edge:index};
+                    edges.push({vertices:[], points:[pt, intersect.p], uparc:newarc});
                     lowarc.next = newarc;
                     uparc.prev = newarc;
                     if (intersect.prev) intersect.prev.next = lowarc;
@@ -274,8 +274,7 @@ Voronoi = function(points) {
             var dx2 = curr.p.x - bbox[0];
             var yy = Math.sqrt(dx*dx - dx2*dx2);
             var ll = {x:bbox[0], y:curr.p.y-yy};
-            if (ul.x > bbox[0] && ul.y > bbox[1])
-                draw.drawArc(curr.p, currx, ul, ll);
+            draw.drawArc(curr.p, currx, ul, ll);
             for (curr = curr.next; curr.next; curr = curr.next) {
                 ul = tangentCircle(curr.p, curr.next.p, currx);
                 ll = tangentCircle(curr.prev.p, curr.p, currx);
@@ -286,8 +285,7 @@ Voronoi = function(points) {
             yy = Math.sqrt(dx*dx - dx2*dx2);
             ul = {x:bbox[0], y:curr.p.y+yy};
             ll = tangentCircle(curr.prev.p, curr.p, currx);
-            if (ll.x > bbox[0] && ll.y < bbox[3])
-                draw.drawArc(curr.p, currx, ul, ll);
+            draw.drawArc(curr.p, currx, ul, ll);
         },
         halfstep:function() {
             if (pq.isEmpty()) return false;
@@ -308,8 +306,8 @@ Voronoi = function(points) {
                 if (edges[curr.edge].vertices.length) {
                     draw.drawEdge({p1:ul, p2:edges[curr.edge].vertices[0]}, "#000000");
                 }
-                else if (curr.prev.p == curr.next.p) {
-                    var ll = tangentCircle(curr.prev.p, curr.p, currx);
+                else if (!drawn[curr.edge] && edges[curr.edge].uparc) {
+                    var ll = tangentCircle(edges[curr.edge].uparc.p, edges[curr.edge].uparc.next.p, currx);
                     draw.drawEdge({p1:ul, p2:ll}, "#000000");
                 }
                 drawn[curr.edge] = true;
@@ -327,7 +325,7 @@ Voronoi = function(points) {
                                y:(edges[i].points[0].y+edges[i].points[1].y)/2};
 
                     //var bound = intersection(mid, edges[i].vertices[0], bbox1, bbox2);
-                    draw.drawEdge({p1:edges[i].vertices[0], p2:mid}, "#ff0000");
+                    //draw.drawEdge({p1:edges[i].vertices[0], p2:mid}, "#ff0000");
                 }
                 else {
                     // Error: Should have drawn this on the beach
