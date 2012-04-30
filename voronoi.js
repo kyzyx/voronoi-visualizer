@@ -48,7 +48,6 @@ Voronoi = function(points) {
     var currx = pq.isEmpty()?0:pq.peek().x;
     // Clear debug screen
     $("#beach").get(0).value = "";
-    $("#beach2").get(0).value = "";
     $("#evtq").get(0).value = "";
 
     var that = {
@@ -216,15 +215,11 @@ Voronoi = function(points) {
             var bbox = draw.bounds();
             // Highlight points on beach
             $("#beach").get(0).value = "";
-            $("#beach2").get(0).value = "";
             $("#evtq").get(0).value = "";
             for (var c = beach.getMinimum(); c; c = c.next) {
                 draw.drawPoint(c.p, "#ffff00");
                 $("#beach").get(0).value += c.d + ": " + "(" + c.p.x + "," + c.p.y + ")\n";
             }
-            beach.inOrderTraverse(function(c) {
-                $("#beach2").get(0).value += c.d + ": " +  "(" + c.p.x + "," + c.p.y + ")\n";
-            });
             var k = pq.getKeys();
             var v = pq.getValues();
             var kv = [];
