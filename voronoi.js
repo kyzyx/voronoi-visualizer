@@ -7,7 +7,7 @@ var SITE = 1;
 var ARC  = 2;
 
 Voronoi = function(points) {
-    var currarc;
+    var point = points;
     var pt;
     // Sweep line events
     var pq = new goog.structs.PriorityQueue();
@@ -18,6 +18,7 @@ Voronoi = function(points) {
     //     ARC object: x,y are the coordinates of the point
     //                d is the index into beach of the arc
     //                next, prev have next and previous pointers
+    //                edge is an index into the edge array of the upper edge of the arc
 
     // A sorted structure containing the beach line
     // The indices are managed manually due to the difficulty in computing the
@@ -31,10 +32,9 @@ Voronoi = function(points) {
 
     // A map of pairs of vertices to edge endpoints
     var edgemap = new goog.structs.Map;
-    // A list of edges ({p1,p2});
+
+    // A list of edges {vertices:[v1,v2],points:[p1,p2]};
     var edges = [];
-    var unboundededges = [];
-    var point = points;
 
     // Initialize event queue
     for (var i = 0; i < points.length; ++i) {
@@ -130,12 +130,11 @@ Voronoi = function(points) {
                 pt = ev.p;
                 if (ev.type == SITE) {
                     if (beach.getCount() == 0) {
-                        beach.add({p:pt, d:0, next:null, prev:null});
+                        beach.add({p:pt, d:0, next:null, prev:null, edge:-1});
                         return true;
                     }
                     // Search beach for arc with same y-coord
                     var intersect = that.locateBeach(pt.x, pt.y);
-                    currarc = intersect;
                     var d = intersect.d;
 
                     var nextd, prevd;
@@ -152,11 +151,13 @@ Voronoi = function(points) {
                     beach.remove(intersect);
 
                     // Insert two new subarcs plus the newly constructed arc
+                    var index = edges.length;
+                    edges.push({vertices:[], points:[pt, intersect.p]});
                     var lowarc = 
-                        {p:intersect.p, d:prevd, prev:intersect.prev};
+                        {p:intersect.p, d:prevd, prev:intersect.prev, edge:index};
                     var uparc = 
-                        {p:intersect.p, d:nextd, next:intersect.next};
-                    var newarc = {p:pt, d:d, next:uparc, prev:lowarc}
+                        {p:intersect.p, d:nextd, next:intersect.next, edge:intersect.edge};
+                    var newarc = {p:pt, d:d, next:uparc, prev:lowarc, edge:index};
                     lowarc.next = newarc;
                     uparc.prev = newarc;
                     if (intersect.prev) intersect.prev.next = lowarc;
@@ -180,32 +181,15 @@ Voronoi = function(points) {
                     if (!that.isValidArcEvent(ev.arc)) {
                         return that.step();
                     }
-                    currarc = null;
                     // Record edge information
-                    var vp1 = {x:ev.arc.next.x, y:ev.arc.next.y};
-                    var vp2 = {x:ev.arc.prev.x, y:ev.arc.prev.y};
-                    var vp3 = {x:ev.arc.x, y:ev.arc.y};
-                    var e1 = {p1:vp1,p2:vp3};
-                    var e2 = {p1:vp3,p2:vp3};
-                    var e3 = {p1:vp1,p2:vp2};
-                    var ep1 = edgemap.get(e1);
-                    var ep2 = edgemap.get(e2);
-                    var ep3 = edgemap.get(e3);
-                    if (ep1) {
-                        edges.push({p1:ev.v, p2:ep1});
-                        edgemap.remove(e1);
-                    }
-                    else edgemap.set(e1, ev.v);
-                    if (ep2) {
-                        edges.push({p1:ev.v, p2:ep2});
-                        edgemap.remove(e2);
-                    }
-                    else edgemap.set(e2, ev.v);
-                    if (ep3) {
-                        edges.push({p1:ev.v, p2:ep3});
-                        edgemap.remove(e3);
-                    }
-                    else edgemap.set(e3, ev.v);
+                    var point = circumcenter(ev.arc.p, ev.arc.prev.p, ev.arc.next.p);
+                    edges[ev.arc.prev.edge].vertices.push(point);
+                    edges[ev.arc.edge].vertices.push(point);
+                    // Update edges
+                    var index = edges.length;
+                    edges.push({vertices:[point], points:[ev.arc.prev.p, ev.arc.next.p]});
+                    ev.arc.prev.edge = index;
+
                     // Delete the arc that disappeared
                     beach.remove(ev.arc);
                     // Invalidate 3 ARC events with old arc, and add new events
@@ -262,6 +246,7 @@ Voronoi = function(points) {
                 }
                 $("#evtq").get(0).value += s + "\n";
             }
+            /*
             for (var i = 0; i < point.length; ++i) {
                 var c = point[i];
                 var dx = currx - bbox[0];
@@ -270,7 +255,7 @@ Voronoi = function(points) {
                 var ul = {x:bbox[0], y:c.y+yy};
                 var ll = {x:bbox[0], y:c.y-yy};
                 draw.drawArc(c, currx, ul, ll, "#ffff00");
-            }
+            }*/
         },
         drawBeach:function(draw){
             var bbox = draw.bounds();
@@ -315,45 +300,45 @@ Voronoi = function(points) {
             return true;
         },
         draw:function(draw) {
-            // Add bbox edges
-            /*unboundededges = [];
-            goog.structs.forEach(edgemap, function(v,k,c) {
-                // Midpoint of p1,p2
-                var m = {x:(k.p1.x+k.p2.x)/2, y:(k.p1.y+k.p2.y)/2};
-                // Calculate facing bounding box edges and save the closest
-                var closest = Number.POSITIVE_INFINITY;
-                var closestp;
-                if (m.x < v.x) {
-                    closestp = intersection(v, m, {x:bbox[0],y:bbox[1]}, {x:bbox[0],y:bbox[3]});
-                    closest = dist2(closestp, v);
-                }
-                else if (m.x > v.x) {
-                    closestp = intersection(v, m, {x:bbox[2],y:bbox[1]}, {x:bbox[2],y:bbox[3]});
-                    closest = dist2(closestp,v);
-                }
-                if (m.y < v.y) {
-                    var p = intersection(v, m, {x:bbox[0],y:bbox[1]}, {x:bbox[2],y:bbox[1]});
-                    var d = dist2(p, v);
-                    if (d < closest) {
-                        closest = d;
-                        closestp = p;
-                    }
-                }
-                else if (m.y > v.y){
-                    var p = intersection(v, m, {x:bbox[0],y:bbox[3]}, {x:bbox[2],y:bbox[3]});
-                    var d = dist2(p, v);
-                    if (d < closest) {
-                        closest = d;
-                        closestp = p;
-                    }
-                }
-                unboundededges.push({p1:v,p2:closestp});
-            });*/
             draw.update();
             draw.drawVerticalLine(currx);
-            //draw.drawEdges(edges);
-            //draw.drawEdges(unboundededges);
             that.drawBeach(draw);
+            if (beach.length < 2) return;
+            // Keep track of which edges have been drawn
+            var drawn = [];
+            for (var i = 0; i < edges.length; ++i) drawn[i] = false;
+            // First draw the edges from the beach line (Topmost arc has no edge)
+            for (var curr = beach.getMinimum(); curr.next; curr = curr.next) {
+                var ul = tangentCircle(curr.p, curr.next.p, currx);
+                if (edges[curr.edge].vertices.length) {
+                    draw.drawEdge({p1:ul, p2:edges[curr.edge].vertices[0]}, "#000000");
+                }
+                else if (curr.prev.p == curr.next.p) {
+                    var ll = tangentCircle(curr.prev.p, curr.p, currx);
+                    draw.drawEdge({p1:ul, p2:ll}, "#000000");
+                }
+                drawn[curr.edge] = true;
+            }
+            // Draw remaining edges
+            for (var i = 0; i < edges.length; ++i) {
+                if (drawn[i]) continue;
+                if (edges[i].vertices.length == 2) {
+                    // Draw edge with both endpoints
+                    draw.drawEdge({p1:edges[i].vertices[0], p2:edges[i].vertices[1]}, "#000000");
+                }
+                else if (edges[i].vertices.length == 1) {
+                    // Draw unbounded edge
+                    var mid = {x:(edges[i].points[0].x+edges[i].points[1].x)/2, 
+                               y:(edges[i].points[0].y+edges[i].points[1].y)/2};
+
+                    //var bound = intersection(mid, edges[i].vertices[0], bbox1, bbox2);
+                    draw.drawEdge({p1:edges[i].vertices[0], p2:mid}, "#ff0000");
+                }
+                else {
+                    // Error: Should have drawn this on the beach
+                    console.log("Error: Loose edge");
+                }
+            }
         }
     };
     return that;
