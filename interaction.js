@@ -230,6 +230,7 @@ VoronoiSystem = function(thecanvas, theslider) {
         },
         voronoi:function() {
             diagram = new Voronoi(points);
+            theslider.slider("option","value", 0);
         },
         halfstep:function() {
             if (!diagram) diagram = new Voronoi(points);
