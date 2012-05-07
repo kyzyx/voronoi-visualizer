@@ -31,6 +31,9 @@ VoronoiSystem = function(thecanvas, theslider) {
                     return true;
                 }
                 else {
+                    diagram = new Voronoi(points);
+                    diagram.moveline(x);
+                    that.updateVoronoi(that);
                     return false;
                 }
             });
