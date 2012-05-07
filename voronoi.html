@@ -79,15 +79,15 @@
             var timeout = false;
             var t = 50;
             var dostep = function() {
-                var v = $("#slider").slider("value");
-                var s = $("#slider").slider("option", "step");
-                if (v == $("#slider").slider("option", "max")) {
+                var v = sys.getline();
+                var bounds = sys.bounds();
+                var s = (bounds[2]-bounds[0])/$("#slider").slider("option","max");
+                if (!sys.slide(v+s)) {
                     $("#animate").get(0).value = "Animate sweep line";
                     clearTimeout(timeout);
                     animated = false;
                     return false;
                 }
-                sys.slide(v+s);
                 timeout = setTimeout(dostep, t);
                 animated = true;
                 return true;
@@ -112,7 +112,9 @@
             });
             $("#slider").bind("slide", function(e, ui) {
                 if (animated) $("#animate").click();
-                sys.slide(ui.value);
+                var bounds = sys.bounds();
+                var x = (bounds[2]-bounds[0])*ui.value/$("#slider").slider("option","max") + bounds[0];
+                sys.slide(x);
             });
         });
     </script>

@@ -136,11 +136,13 @@ Voronoi = function(points) {
         step:function() {
             if (!pq.isEmpty()) {
                 // Get a valid event
+                var nextev;
                 do {
-                    ev = pq.dequeue();
-                } while (!pq.isEmpty() && !ev.valid);
+                    nextev = pq.dequeue();
+                } while (!pq.isEmpty() && !nextev.valid);
                 if (pq.isEmpty()) return false;
 
+                ev = nextev;
                 currx = ev.x;
                 pt = ev.p;
 
@@ -237,6 +239,14 @@ Voronoi = function(points) {
                 that.step();
             }
         },
+        // Advance sweep line to draw unbounded edges
+        finish:function(draw) {
+            var bbox = draw.bounds();
+            var inc = bbox[2] - bbox[0];
+            while (that.draw(draw)) {
+                that.moveline(currx + inc);
+            }
+        },
         moveline:function(x) {
             if (ev && x < ev.x) return false;
             while (!pq.isEmpty() && x > pq.peek().x) that.step();
@@ -279,9 +289,21 @@ Voronoi = function(points) {
                 $("#evtq").get(0).value += s + "\n";
             }
         },
+        arcInView:function(bbox, p, x) {
+            var corners = [{x:bbox[2], y:bbox[1]},{x:bbox[2], y:bbox[3]}];
+            //console.log(corners);
+            //console.log(p.x + "," + p.y +  " " + x);
+            for (var i = 0; i < corners.length; ++i) {
+                //console.log(dist2(corners[i], p) + " " +  ((corners[i].x - x)*(corners[i].x - x)));
+                if (dist2(corners[i], p) > (corners[i].x - x)*(corners[i].x - x)) {
+                    return true;
+                }
+            }
+            return false;
+        },
         drawBeach:function(draw){
             var bbox = draw.bounds();
-            if (beach.getCount() == 0) return;
+            if (beach.getCount() == 0) return true;
             else if (beach.getCount() == 1) { 
                 var c = beach.getMinimum();
                 while (c.next && c.p.x == currx) {
@@ -293,8 +315,9 @@ Voronoi = function(points) {
                 var ul = {x:bbox[0], y:c.p.y+yy};
                 var ll = {x:bbox[0], y:c.p.y-yy};
                 draw.drawArc(c.p, currx, ul, ll);
-                return;
+                return that.arcInView(bbox, c.p, currx);
             }
+            var beachExists = false;
             var curr = beach.getMinimum();
             var ul = tangentCircle(curr.p, curr.next.p, currx);
             var dx = currx - bbox[0];
@@ -302,10 +325,12 @@ Voronoi = function(points) {
             var yy = Math.sqrt(dx*dx - dx2*dx2);
             var ll = {x:bbox[0], y:curr.p.y-yy};
             draw.drawArc(curr.p, currx, ul, ll);
+            beachExists = beachExists || that.arcInView(bbox, curr.p, currx);
             for (curr = curr.next; curr.next; curr = curr.next) {
                 ul = tangentCircle(curr.p, curr.next.p, currx);
                 ll = tangentCircle(curr.prev.p, curr.p, currx);
                 draw.drawArc(curr.p, currx, ul, ll);
+                beachExists = beachExists || that.arcInView(bbox, curr.p, currx);
             }
             dx = currx - bbox[0];
             dx2 = curr.p.x - bbox[0];
@@ -313,11 +338,13 @@ Voronoi = function(points) {
             ul = {x:bbox[0], y:curr.p.y+yy};
             ll = tangentCircle(curr.prev.p, curr.p, currx);
             draw.drawArc(curr.p, currx, ul, ll);
+            beachExists = beachExists || that.arcInView(bbox, curr.p, currx);
+            return beachExists;
         },
         draw:function(draw) {
             draw.drawVerticalLine(currx);
-            that.drawBeach(draw);
-            if (beach.getCount() < 2) return;
+            var ret = that.drawBeach(draw);
+            if (beach.getCount() < 2) return ret;
             // Keep track of which edges have been drawn
             var drawn = [];
             for (var i = 0; i < edges.length; ++i) drawn[i] = false;
@@ -345,6 +372,7 @@ Voronoi = function(points) {
                     console.log("Error: Loose edge");
                 }
             }
+            return ret;
         }
     };
     return that;

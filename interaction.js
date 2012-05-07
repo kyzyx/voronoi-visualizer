@@ -23,18 +23,16 @@ VoronoiSystem = function(thecanvas, theslider) {
                 that.update();
             });
         },
-        slide:function(value) {
-            var x = (bounds[2]-bounds[0])*value/theslider.slider("option","max") + bounds[0];
+        slide:function(x) {
             if (!diagram) that.voronoi();
             if (diagram.moveline(x)) {
-                that.update();
-                return true;
+                var ret = that.update();
+                return ret;
             }
             else {
                 diagram = new Voronoi(points);
                 diagram.moveline(x);
-                that.update();
-                return false;
+                return that.update();
             }
         },
         addPoint:function(x, y) {
@@ -138,11 +136,12 @@ VoronoiSystem = function(thecanvas, theslider) {
 
             // Draw Voronoi Diagram
             if (!diagram) return;
-            diagram.draw(that);
+            var ret = diagram.draw(that);
             diagram.debug(that);
 
             // Update slider position
             that.updateSlider();
+            return ret;
         },
         // DRAW FUNCTIONS
         drawPoint:function(p, color) {
@@ -228,7 +227,7 @@ VoronoiSystem = function(thecanvas, theslider) {
             var val = theslider.slider("option","max")*(x - bounds[0])/(bounds[2]-bounds[0]);
             if (val < 0) val = 0;
             if (val > theslider.slider("option","max")) val = theslider.slider("option","max");
-            theslider.slider("option","value", val);
+            theslider.slider("option","value", Math.round(val));
         },
         voronoi:function() {
             diagram = new Voronoi(points);
@@ -239,11 +238,20 @@ VoronoiSystem = function(thecanvas, theslider) {
             if(diagram.step()) {
                 that.update();
             }
+            else {
+                diagram.finish(that);
+                that.update();
+            }
         },
         complete:function() {
             if (!diagram) diagram = new Voronoi(points);
             diagram.compute();
+            diagram.finish(that);
             that.update();
+        },
+        getline:function() {
+            if (!diagram) that.voronoi();
+            return diagram.getline();
         },
     };
     return that;
