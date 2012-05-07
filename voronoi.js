@@ -1,39 +1,47 @@
+// Google closure library data structures
+// Standard hash map with O(1) operations, priority queue with O(log n) operations,
+// AVL tree as a BBST with O(log n) operations.
 goog.require("goog.structs");
 goog.require("goog.structs.Map");
 goog.require("goog.structs.PriorityQueue");
 goog.require("goog.structs.AvlTree");
 
+// Constants for event types
 var SITE = 1;
 var ARC  = 2;
 
 Voronoi = function(points) {
     var point = points;
     var pt, ev;
-    // Sweep line events
+
+    // Sweep line event queue
     var pq = new goog.structs.PriorityQueue();
-    // A pq event is of two types: SITE or ARC
-    // Events have an event coordinate x, either a point (for a SITE) or an arc (for an ARC),
-    // a type, and a valid.
+
+    // An event is of two types: SITE or ARC
+    // Events have an event coordinate x, either a point (for a SITE)
+    // or an arc (for an ARC), a type, and whether or not it is valid.
     //     SITE object: x,y
-    //     ARC object: x,y are the coordinates of the point
+    //     ARC object: p is the coordinates (x,y) of the point
     //                d is the index into beach of the arc
     //                next, prev have next and previous pointers
-    //                edge is an index into the edge array of the upper edge of the arc
+    //                edge indexes into the edge array for the upper edge of the arc
+    //                key is a static key that is used for the qmap hash table
 
     // A sorted structure containing the beach line
     // The indices are managed manually due to the difficulty in computing the
     // nearest parabolic arc
-    // Thus we use this as a linked-list-sorted-array hybrid structure
+    // Thus we use this as a linked-list-sorted-array hybrid structure with
+    // real-valued indices
     var beach = new goog.structs.AvlTree(function(a,b){
         return a.d - b.d;
     });
-    // A map of arcs to events, for easy invalidation
+
+    // A map of arcs to events, for easy event invalidation
     var qmap = new goog.structs.Map;
 
-    // A map of pairs of vertices to edge endpoints
-    var edgemap = new goog.structs.Map;
-
     // A list of edges {vertices:[v1,v2],points:[p1,p2]};
+    // Vertices are the endpoints of the edge; points are the diagram points that
+    // this edge bisects
     var edges = [];
 
     // Initialize event queue
@@ -44,22 +52,28 @@ Voronoi = function(points) {
                   type:SITE, valid:true};
         pq.enqueue(points[i].x, evt);
     }
+
     // Current sweep line location
     var currx = pq.isEmpty()?0:pq.peek().x;
+
     // Clear debug screen
     $("#beach").get(0).value = "";
     $("#evtq").get(0).value = "";
 
     var that = {
+        // Calculates the static key for arc
         arcKey:function(arc) {
             var tmp = {i:arc.p, n:arc.next?arc.next.p:arc.next, p:arc.prev?arc.prev.p:arc.prev};
+            // Closure hash map uses the toString function to get the key, so
+            // calculate as a json string on the coordinates of the three arc centers
             tmp.toString = function(){return JSON.stringify(tmp)};
             return tmp;
         },
+        // Adds the arc event to the appropriate lists
         addEvent:function(arc) {
             if (!arc.prev || !arc.next) return;
             // If the site is in front of both of its neighbors, then it can't
-            // be hidden.
+            // be "hidden", i.e. this is an expanding arc
             if (arc.p.x > arc.prev.p.x && arc.p.x > arc.next.p.x) return;
             var ccenter = circumcenter(arc.p, arc.prev.p, arc.next.p);
             // If sites are collinear, then the edges cannot intersect
@@ -68,10 +82,15 @@ Voronoi = function(points) {
             var x = ccenter.x + cradius;
             // If this event has passed, it is invalid
             if (x < currx) return;
+            // Otherwise, add the event to the queue
             var evt = {x:x, arc:arc, v:ccenter, type:ARC, valid:true};
             qmap.set(arc.key, evt);
             pq.enqueue(evt.x, evt);
         },
+        // Determines whether this arc event actually consists of
+        // three parabolic arcs intersecting at the same point.
+        // There's probably a calculation that can determine this before adding
+        // the event to the queue, but
         isValidArcEvent:function(arc) {
             var ccenter = circumcenter(arc.p, arc.prev.p, arc.next.p);
             if (!ccenter) return false;
@@ -86,11 +105,11 @@ Voronoi = function(points) {
 
         // Perform a binary search by walking down the AVL tree
         // We have to dig into private variables here to get to the tree structure!
-        locateBeach:function(x, y) {
+        searchBeach:function(x, y) {
             var curr = beach.root_;
             while (true) {
-                // "break point", i.e. intersection of two arcs, is
-                // equidistant from the two points and the sweep line.
+                // A "break point", i.e. an intersection of two arcs, is
+                // equidistant from the two center points and the sweep line.
                 // Therefore, we just calculate the center of a circle
                 // passing through the two points and tangent to the line
                 var ul = Number.POSITIVE_INFINITY;
@@ -112,49 +131,51 @@ Voronoi = function(points) {
                 }
             }
         },
-        compute:function() {
-            while (!pq.isEmpty()) {
-                that.step();
-            }
-        },
+
+        // Main loop: Process a single event off of the event queue
         step:function() {
             if (!pq.isEmpty()) {
+                // Get a valid event
                 do {
                     ev = pq.dequeue();
                 } while (!pq.isEmpty() && !ev.valid);
                 if (pq.isEmpty()) return false;
+
                 currx = ev.x;
                 pt = ev.p;
+
                 if (ev.type == SITE) {
+                    // Initial point
                     if (beach.getCount() == 0) {
                         beach.add({p:pt, d:0, next:null, prev:null, edge:-1});
                         return true;
                     }
                     // Search beach for arc with same y-coord
-                    var intersect = that.locateBeach(pt.x, pt.y);
+                    var intersect = that.searchBeach(pt.x, pt.y);
                     var d = intersect.d;
 
-                    var nextd, prevd;
+                    // Remove intersected arc
+                    beach.remove(intersect);
+
+                    // Insert two new subarcs plus the newly constructed arc
+                    //      Get adjacent arcs
                     var next = intersect.next;
                     var prev = intersect.prev;
+                    //      Calculate indices into AVL tree
+                    var nextd, prevd;
                     if (next)      nextd = (d + next.d)/2;
                     else if (prev) nextd = prev.d + 2*(d-prev.d);
                     else           nextd = 4096;
                     if (prev)      prevd = (d + prev.d)/2;
                     else if (next) prevd = next.d - 2*(next.d-d);
                     else           prevd = -4096;
-
-                    // Remove intersected arc
-                    beach.remove(intersect);
-
-                    // Insert two new subarcs plus the newly constructed arc
                     var index = edges.length;
+                    //      Create arc objects
                     var lowarc = 
                         {p:intersect.p, d:prevd, prev:intersect.prev, edge:index};
                     var uparc = 
                         {p:intersect.p, d:nextd, next:intersect.next, edge:intersect.edge};
                     var newarc = {p:pt, d:d, next:uparc, prev:lowarc, edge:index};
-                    edges.push({vertices:[], points:[pt, intersect.p], uparc:newarc});
                     lowarc.next = newarc;
                     uparc.prev = newarc;
                     if (intersect.prev) intersect.prev.next = lowarc;
@@ -162,11 +183,12 @@ Voronoi = function(points) {
                     newarc.key = that.arcKey(newarc);
                     lowarc.key = that.arcKey(lowarc);
                     uparc.key = that.arcKey(uparc);
+                    edges.push({vertices:[], points:[pt, intersect.p], uparc:newarc});
                     beach.add(newarc);
                     beach.add(lowarc);
                     beach.add(uparc);
 
-                    // Invalidate ARC event with old arc
+                    // Invalidate ARC event containing old arc
                     var delev = qmap.get(intersect.key);
                     if (delev) delev.valid = false;
 
@@ -209,6 +231,12 @@ Voronoi = function(points) {
             }
             return false;
         },
+        // Step through entire queue
+        compute:function() {
+            while (!pq.isEmpty()) {
+                that.step();
+            }
+        },
         moveline:function(x) {
             if (ev && x < ev.x) return false;
             while (!pq.isEmpty() && x > pq.peek().x) that.step();
@@ -250,16 +278,6 @@ Voronoi = function(points) {
                 }
                 $("#evtq").get(0).value += s + "\n";
             }
-            /*
-            for (var i = 0; i < point.length; ++i) {
-                var c = point[i];
-                var dx = currx - bbox[0];
-                var dx2 = c.x - bbox[0];
-                var yy = Math.sqrt(dx*dx - dx2*dx2);
-                var ul = {x:bbox[0], y:c.y+yy};
-                var ll = {x:bbox[0], y:c.y-yy};
-                draw.drawArc(c, currx, ul, ll, "#ffff00");
-            }*/
         },
         drawBeach:function(draw){
             var bbox = draw.bounds();
@@ -296,11 +314,6 @@ Voronoi = function(points) {
             ll = tangentCircle(curr.prev.p, curr.p, currx);
             draw.drawArc(curr.p, currx, ul, ll);
         },
-        halfstep:function() {
-            if (pq.isEmpty()) return false;
-            currx = (currx + pq.peek().x)/2;
-            return true;
-        },
         draw:function(draw) {
             draw.drawVerticalLine(currx);
             that.drawBeach(draw);
@@ -326,14 +339,6 @@ Voronoi = function(points) {
                 if (edges[i].vertices.length == 2) {
                     // Draw edge with both endpoints
                     draw.drawEdge({p1:edges[i].vertices[0], p2:edges[i].vertices[1]}, "#000000");
-                }
-                else if (edges[i].vertices.length == 1) {
-                    // Draw unbounded edge
-                    var mid = {x:(edges[i].points[0].x+edges[i].points[1].x)/2, 
-                               y:(edges[i].points[0].y+edges[i].points[1].y)/2};
-
-                    //var bound = intersection(mid, edges[i].vertices[0], bbox1, bbox2);
-                    //draw.drawEdge({p1:edges[i].vertices[0], p2:mid}, "#ff0000");
                 }
                 else {
                     // Error: Should have drawn this on the beach
