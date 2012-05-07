@@ -249,7 +249,10 @@ Voronoi = function(points) {
         },
         moveline:function(x) {
             if (ev && x < ev.x) return false;
-            while (!pq.isEmpty() && x > pq.peek().x) that.step();
+            while (!pq.isEmpty() && x > pq.peek().x) {
+                if (pq.peek().valid) that.step();
+                else pq.dequeue();
+            }
             currx = x;
             return true;
         },
