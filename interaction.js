@@ -249,6 +249,12 @@ VoronoiSystem = function(thecanvas, theslider) {
                 that.updateVoronoi();
             }
         },
+        complete:function() {
+            if (!diagram) diagram = new Voronoi(points);
+            diagram.compute();
+            that.updateSlider();
+            that.updateVoronoi();
+        },
         updateVoronoi:function() {
             if (!diagram) return;
             diagram.draw(that);

@@ -49,8 +49,8 @@
             $("#step").click(function(e){
                 sys.step();
             });
-            $("#halfstep").click(function(e){
-                sys.halfstep();
+            $("#complete").click(function(e){
+                sys.complete();
             });
             $("#restart").click(function(e){
                 sys.voronoi();
@@ -95,7 +95,7 @@
         <td valign="top">
             <input id="numpts" value="10" size=2></input><input id="rand" type="button" value="Generate Random Points"><br>
             <input type="button" id="step" value="Next event">
-            <input type="button" id="halfstep" value="Halfstep next event">
+            <input type="button" id="complete" value="Compute Voronoi Diagram">
             <input type="button" id="restart" value="Restart"><br>
             <textarea id="evtq" rows="12" cols="80"></textarea><br>
             <textarea id="beach" rows="10" cols="80"></textarea><br>
