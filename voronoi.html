@@ -10,13 +10,11 @@
     <script src="interaction.js"></script>
     <script type="text/javascript">
         $(document).ready(function() {
+            // Initialize system
             var sys = new VoronoiSystem($("#plane"), $("#slider"));
-            /*sys.addPoint(-2,2);
-            sys.addPoint(2,2);
-            sys.addPoint(-2,-2);
-            sys.addPoint(2,-2);
-            sys.addPoint(0,0);
-            sys.addPoint(-0.5,1);*/
+            sys.addHandlers();
+
+            // Basic test input
             sys.addPoint(-2,0);
             sys.addPoint(-1.5,0.4);
             sys.addPoint(-1,1);
@@ -24,14 +22,18 @@
             sys.addPoint(0,-1);
             sys.addPoint(1,-2);
             sys.addPoint(2,2);
-            sys.addHandlers();
-            sys.update();
+            sys.fitBounds();
+
+            // Update screen bounds
             var b = sys.bounds();
             $("#xmin").get(0).value = b[0];
             $("#ymin").get(0).value = b[1];
             $("#xmax").get(0).value = b[2];
             $("#ymax").get(0).value = b[3];
 
+            sys.update();
+
+            // Set click handlers
             $("#rand").click(function(e){
                 var n = parseInt($("#numpts").get(0).value);
                 if (n < 2) return;
@@ -61,7 +63,6 @@
                 b[3] = $("#ymax").get(0).value;
                 sys.bounds(b);
                 sys.update();
-                sys.updateVoronoi();
             });
             $("#updatebounds").click(function(e){
                 var b = [];
@@ -71,11 +72,47 @@
                 b[3] = $("#ymax").get(0).value;
                 sys.bounds(b);
                 sys.update();
-                sys.updateVoronoi();
             });
+
+            // Animation
+            var animated = false;
+            var timeout = false;
+            var t = 50;
+            var dostep = function() {
+                var v = $("#slider").slider("value");
+                var s = $("#slider").slider("option", "step");
+                if (v == $("#slider").slider("option", "max")) {
+                    $("#animate").get(0).value = "Animate sweep line";
+                    clearTimeout(timeout);
+                    animated = false;
+                    return false;
+                }
+                sys.slide(v+s);
+                timeout = setTimeout(dostep, t);
+                animated = true;
+                return true;
+            };
+            $("#animate").click(function(e){
+                if (animated) {
+                    $("#animate").get(0).value = "Animate sweep line";
+                    clearTimeout(timeout);
+                    animated = !animated;
+                }
+                else {
+                    if (dostep()) {
+                        $("#animate").get(0).value = "Stop sweep line animation";
+                    }
+                }
+            });
+
+            // Initialize slider
             $("#slider").slider({
                 min:0,
                 max:200,
+            });
+            $("#slider").bind("slide", function(e, ui) {
+                if (animated) $("#animate").click();
+                sys.slide(ui.value);
             });
         });
     </script>
@@ -95,6 +132,8 @@
         <td valign="top">
             <input id="numpts" value="10" size=2></input><input id="rand" type="button" value="Generate Random Points"><br>
             <input type="button" id="step" value="Next event">
+            <input type="button" id="animate" value="Animate sweep line">
+            <br>
             <input type="button" id="complete" value="Compute Voronoi Diagram">
             <input type="button" id="restart" value="Restart"><br>
             <textarea id="evtq" rows="12" cols="80"></textarea><br>

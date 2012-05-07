@@ -302,7 +302,6 @@ Voronoi = function(points) {
             return true;
         },
         draw:function(draw) {
-            draw.update();
             draw.drawVerticalLine(currx);
             that.drawBeach(draw);
             if (beach.getCount() < 2) return;

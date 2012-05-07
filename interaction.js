@@ -16,27 +16,26 @@ VoronoiSystem = function(thecanvas, theslider) {
         addHandlers:function() {
             $(window).resize(that.resize);
             that.resize();
-            that.fitBounds();
             thecanvas.click(function(e) {
                 var x = e.pageX - canvas.offsetLeft;
                 var y = e.pageY - canvas.offsetTop;
                 that.addPoint(that.fromScreen(x, y));
                 that.update();
             });
-            theslider.bind("slide", function(e, ui) {
-                var x = (bounds[2]-bounds[0])*ui.value/theslider.slider("option","max") + bounds[0];
-                if (!diagram) that.voronoi();
-                if (diagram.moveline(x)) {
-                    that.updateVoronoi(that);
-                    return true;
-                }
-                else {
-                    diagram = new Voronoi(points);
-                    diagram.moveline(x);
-                    that.updateVoronoi(that);
-                    return false;
-                }
-            });
+        },
+        slide:function(value) {
+            var x = (bounds[2]-bounds[0])*value/theslider.slider("option","max") + bounds[0];
+            if (!diagram) that.voronoi();
+            if (diagram.moveline(x)) {
+                that.update();
+                return true;
+            }
+            else {
+                diagram = new Voronoi(points);
+                diagram.moveline(x);
+                that.update();
+                return false;
+            }
         },
         addPoint:function(x, y) {
             if (typeof(x) == 'object') {
@@ -61,14 +60,6 @@ VoronoiSystem = function(thecanvas, theslider) {
                 that.addPoint(Math.random(), Math.random());
             }
             slider.value = 0;
-        },
-        refreshBounds:function() {
-            for (var i = 0; i < points.length; ++i) {
-                if (points[i].x > maxx) maxx = points[i].x;
-                if (points[i].y > maxy) maxy = points[i].y;
-                if (points[i].x < minx) minx = points[i].x;
-                if (points[i].y < miny) miny = points[i].y;
-            }
         },
         bounds:function(b) {
             if (!b) return bounds;
@@ -117,7 +108,6 @@ VoronoiSystem = function(thecanvas, theslider) {
             canvas.width = w;
             canvas.height = h;
             that.update();
-            that.updateVoronoi();
         },
         toScreen:function(x,y){
             if (y === undefined) {
@@ -145,6 +135,14 @@ VoronoiSystem = function(thecanvas, theslider) {
             for (var i = 0; i < points.length; ++i) {
                 that.drawPoint(points[i]);
             }
+
+            // Draw Voronoi Diagram
+            if (!diagram) return;
+            diagram.draw(that);
+            diagram.debug(that);
+
+            // Update slider position
+            that.updateSlider();
         },
         // DRAW FUNCTIONS
         drawPoint:function(p, color) {
@@ -189,8 +187,8 @@ VoronoiSystem = function(thecanvas, theslider) {
                 that.drawEdge(edges[i]);
             }
         },
-        // Ref: http://alecmce.com/as3/parabolas-and-quadratic-bezier-curves
         drawArc:function(focus, directrix, p1, p2, color) {
+            // Ref: http://alecmce.com/as3/parabolas-and-quadratic-bezier-curves
             var sp1 = that.toScreen(p1);
             var sp2 = that.toScreen(p2);
 
@@ -208,6 +206,7 @@ VoronoiSystem = function(thecanvas, theslider) {
                 var m2 = {x:(q2.x+focus.x)/2,y:(q2.y+focus.y)/2};
                 var control = intersection(p1,m1,p2,m2);
                 // Edge case: if one of the points has the same y-coord as the focus
+                // then perturb the points slightly and draw the arc
                 if (!control) {
                     p1.y += EPS;
                     p2.y += EPS;
@@ -238,27 +237,19 @@ VoronoiSystem = function(thecanvas, theslider) {
         halfstep:function() {
             if (!diagram) diagram = new Voronoi(points);
             if (diagram.halfstep()) {
-                that.updateSlider();
-                that.updateVoronoi();
+                that.update();
             }
         },
         step:function() {
             if (!diagram) diagram = new Voronoi(points);
             if(diagram.step()) {
-                that.updateSlider();
-                that.updateVoronoi();
+                that.update();
             }
         },
         complete:function() {
             if (!diagram) diagram = new Voronoi(points);
             diagram.compute();
-            that.updateSlider();
-            that.updateVoronoi();
-        },
-        updateVoronoi:function() {
-            if (!diagram) return;
-            diagram.draw(that);
-            diagram.debug(that);
+            that.update();
         },
     };
     return that;
