@@ -22,22 +22,8 @@
             sys.addPoint(0,-1);
             sys.addPoint(1,-2);
             sys.addPoint(2,2);
-            sys.fitBounds();
 
-            // Update screen bounds
-            var b = sys.bounds();
-            $("#xmin").get(0).value = b[0];
-            $("#ymin").get(0).value = b[1];
-            $("#xmax").get(0).value = b[2];
-            $("#ymax").get(0).value = b[3];
-
-            sys.update();
-
-            // Set click handlers
-            $("#rand").click(function(e){
-                var n = parseInt($("#numpts").get(0).value);
-                if (n < 2) return;
-                sys.randomPoints(n);
+            var refresh = function() {
                 sys.resize();
                 sys.fitBounds();
                 var b = sys.bounds();
@@ -46,6 +32,15 @@
                 $("#xmax").get(0).value = b[2];
                 $("#ymax").get(0).value = b[3];
                 sys.update();
+            };
+            refresh();
+
+            // Set click handlers
+            $("#rand").click(function(e){
+                var n = parseInt($("#numpts").get(0).value);
+                if (n < 2) return;
+                sys.randomPoints(n);
+                refresh();
                 sys.voronoi();
             });
             $("#step").click(function(e){
@@ -104,6 +99,41 @@
                     }
                 }
             });
+            $("#pointdialog").dialog({
+                autoOpen: false,
+                height:500,
+                width:400,
+                modal: true,
+                open: function() {
+                    $("#newpoints").get(0).value = "";
+                },
+                buttons: {
+                    "Add points": function() {
+                        var lines = $("#newpoints").get(0).value.split("\n");
+                        sys.randomPoints(0);
+                        for (var i = 0; i < lines.length; ++i) {
+                            var coords = $.trim(lines[i]).split(" ");
+                            if (coords.length < 2) continue;
+                            var x = parseFloat(coords[0]);
+                            if (x != x) continue;
+                            var y = parseFloat(coords[1]);
+                            if (y != y) continue;
+                            sys.addPoint(x,y);
+                        }
+                        refresh();
+                        sys.voronoi();
+                        $(this).dialog("close");
+                    },
+                    Cancel: function() {
+                        $(this).dialog("close");
+                    }
+                },
+                close: function() {
+                }
+            });
+            $("#manual").click(function(e){
+                $("#pointdialog").dialog("open");
+            });
 
             // Initialize slider
             $("#slider").slider({
@@ -120,6 +150,12 @@
     </script>
 </head>
 <body>
+    <div id="pointdialog" title="Add points">
+        <p>Type in one point on each line, with the two coordinates separated
+        by whitespace. Invalid lines will be ignored.</p>
+        <br>
+        <textarea id="newpoints" rows="8" cols="30"></textarea>
+    </div>
     <table><tr>
         <td>
             Xmin: <input id="xmin" size=2> Xmax: <input id="xmax" size=2>
@@ -132,7 +168,9 @@
             </div>
         </td>
         <td valign="top">
-            <input id="numpts" value="10" size=2></input><input id="rand" type="button" value="Generate Random Points"><br>
+            <input id="numpts" value="10" size=2>
+            <input id="rand" type="button" value="Generate Random Points">
+            <input id="manual" type="button" value="Manually enter points"><br>
             <input type="button" id="step" value="Next event">
             <input type="button" id="animate" value="Animate sweep line">
             <br>
