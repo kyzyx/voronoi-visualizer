@@ -136,11 +136,11 @@ Voronoi = function(points) {
         step:function() {
             if (!pq.isEmpty()) {
                 // Get a valid event
-                var nextev;
+                var nextev = false;
                 do {
                     nextev = pq.dequeue();
                 } while (!pq.isEmpty() && !nextev.valid);
-                if (pq.isEmpty()) return false;
+                if (pq.isEmpty() && !nextev) return false;
 
                 ev = nextev;
                 currx = ev.x;
