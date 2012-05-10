@@ -55,7 +55,7 @@ VoronoiSystem = function(thecanvas, theslider) {
             miny = Number.POSITIVE_INFINITY;
             diagram = null;
             for (var i = 0; i < n; ++i) {
-                that.addPoint(Math.random(), Math.random());
+                that.addPoint(Math.random()*100, Math.random()*100);
             }
             slider.value = 0;
         },
@@ -173,6 +173,31 @@ VoronoiSystem = function(thecanvas, theslider) {
         drawEdge:function(e, color) {
             var p1 = that.toScreen(e.p1);
             var p2 = that.toScreen(e.p2);
+            if ((p1.x < 0 && p2.x < 0) || (p1.y < 0 && p2.y < 0)) {
+                return;
+            }
+            // Keep edges mostly in bounds, since browsers render large negative
+            // coordinates incorrectly
+            if (p1.x < 0) {
+                var f = p2.x/(p2.x-p1.x);
+                p1.x = p1.x*f + p2.x*(1-f);
+                p1.y = p1.y*f + p2.y*(1-f);
+            }
+            if (p1.y < 0) {
+                var f = p2.y/(p2.y-p1.y);
+                p1.x = p1.x*f + p2.x*(1-f);
+                p1.y = p1.y*f + p2.y*(1-f);
+            }
+            if (p2.x < 0) {
+                var f = p1.x/(p1.x-p2.x);
+                p2.x = p2.x*f + p1.x*(1-f);
+                p2.y = p2.y*f + p1.y*(1-f);
+            }
+            if (p2.y < 0) {
+                var f = p1.y/(p1.y-p2.y);
+                p2.x = p2.x*f + p1.x*(1-f);
+                p2.y = p2.y*f + p1.y*(1-f);
+            }
             ctx.strokeStyle = color?color:"#0000ff";
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);

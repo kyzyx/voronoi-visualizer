@@ -1,4 +1,4 @@
-var EPS = 1e-6;
+var EPS = 1e-5;
 function intersection(p1,p2,p3,p4) {
     // Determine line equations
     // |A1 B1| |x|   |C1|
