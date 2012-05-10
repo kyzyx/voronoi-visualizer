@@ -113,8 +113,7 @@ VoronoiSystem = function(thecanvas, theslider) {
                 x = x.x;
             }
             var xx = w*(x - bounds[0])/(bounds[2] - bounds[0]);
-            var yy = h*(y - bounds[1])/(bounds[3] - bounds[1]);
-            yy = h - yy;
+            var yy = h*(bounds[3] - y)/(bounds[3] - bounds[1]);
             return {x:xx, y:yy};
         },
         fromScreen:function(x,y){
