@@ -299,7 +299,7 @@ Voronoi = function(points) {
             var corners = [{x:bbox[2], y:bbox[1]},{x:bbox[2], y:bbox[3]}];
             var in1 = (dist(corners[0], p) > Math.abs(corners[0].x - x))
             var in2 = (dist(corners[1], p) > Math.abs(corners[1].x - x))
-            return (in1 && in2) || (!in1 && !in2);
+            return (in1 || in2);
         },
         drawBeach:function(draw){
             var bbox = draw.bounds();
