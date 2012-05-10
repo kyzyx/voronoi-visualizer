@@ -1,0 +1,183 @@
+<html>
+    <head>
+        <title> README - COS423 Final Project </title>
+    </head>
+    <body>
+        <a href='voronoi.html'><h1>Fortune's Algorithm for Voronoi Diagrams</h1></a>
+        <h2>An Interactive Javascript Implementation </h2>
+        Edward Zhang (edwardz) <br>
+        COS423 Final Project <br><br>
+
+        This is an implementation of Fortune's Algorithm for constructing
+        a Voronoi Diagram. This corresponds to <a href='http://www.cs.princeton.edu/~chazelle/temp/423/projects.pdf'>Project 3</a>. It requires an internet connection
+        to function. It is also available online at <a href='http://www.princeton.edu/~edwardz/VoronoiDiagram/voronoi.html'>http://www.princeton.edu/~edwardz/VoronoiDiagram/voronoi.html</a>. Documentation on execution and running the code is provided on the main
+        page.
+
+        <hr>
+        <h2> Overview </h2>
+            This interactive javascript implementation of Fortune's algorithm uses
+            a left to right sweep line algorithm to generate a Voronoi Diagram using
+            parabolic arcs. <p>
+            It provides several methods for generating points, allowing
+            user specified points entered textually as a list or visually on the plane,
+            as well as randomly generating points in the unit square. <p>
+            We provide interactive control of the sweep line allowing the user to see
+            the parabolic arcs constituting the "beach line" as they sweep out the
+            partial voronoi diagram; to the left of the beach line is the voronoi
+            diagram so far. The sweep line can be animated to move from left to right,
+            or can be dragged back and forth by the user using a slider underneath the
+            plane. The user can manually set the bounds of the view plane using the
+            controls above the plane. <p>
+            More detailed information about the workings of the algorithm can be
+            seen in the textboxes at the bottom right of the page, showing the
+            priority queue of potential sweep line events and the current arcs
+            on the beach line. The user can click a button to step from event to event.
+            <p>
+            This project is implemented entirely in javascript. My implementation of
+            Fortune's algorithm relies on the data structures provided by Google's
+            <a href='http://code.google.com/p/closure-library/'>Closure</a>
+            javascript library. I also use <a href='http://www.jquery.com'>jQuery</a>
+            and <a href='http://www.jqueryui.com'>jQueryUI</a> libraries to provide
+            the interaction widgets as well as helper functions for event handling.
+        <hr>
+        <h2> Implementation </h2>
+        <h3> Fortune's Algorithm </h3>
+            The core algorithm is implemented in <a href='voronoi.js'>voronoi.js</a>
+            <ul>
+                <li> <b> Data Structures: </b> The two core data structures in Fortune's
+                Algorithm are the Sweep Line Priority Queue and the Beach Line Tree
+                <ul>
+                    <li> The sweep line priority queue contains event objects. These
+                    objects contain an x-coordinate of the event, a type (either a SITE
+                    event or an ARC event), and a reference to a point or arc object
+                    depending on which type of event it is. <br>This is implemented as
+                    a Closure Priority Queue, which uses a standard heap implementation.
+                    </li>
+                    <li> The beach line tree maintains a sorted list of the arcs in
+                    the beach line. The tree key is actually a pseudo-index, since
+                    what we need for the beach line is essentially a random-access
+                    linked list of arcs. Thus, we take the first two elements to
+                    have indices e.g. -2<sup>13</sup>, 2<sup>13</sup>; then when
+                    we insert a new node between two existing nodes we simply take the
+                    index halfway in between the two existing indices (going to
+                    floating point indices if necessary), and new nodes at the "ends
+                    of the linked list" just get a new power of 2 as an index. <br>
+                    This allows easy retrieval of nodes by index, while still keeping
+                    the sorted order of nodes in a binary tree form so that
+                    our beach intersection is efficient <br>
+                    We could implement a comparator to directly index based on the arc,
+                    but this method turns out to be simpler.
+                    <br> This is implemented as a Closure AVL tree,
+                    which suffices as a Balanced Binary Search Tree. </li>
+                </ul>
+                One rather important and complex data structure stores the information
+                about a parabolic arc. This data structure contains the following data
+                elements: <ul>
+                    <li>The coordinates of the point that is the focus of the parabola
+                    (i.e. the point that generated the arc)</li>
+                    <li>A pseudo-index into the beach line for this arc</li>
+                    <li>References to the next and previous arcs in the beach line
+                    to keep the linked-list linear time traversal </li>
+                    <li> An index into the array of diagram edges (see below). This
+                    index represents the edge being traced out by the upper breakpoint
+                    of the arc</li>
+                    <li>A static key used as a hash of this arc. This is simply
+                    implemented as a string containing the concatenation of the points
+                    that generated the previous arc, this arc, and next arc. </li>
+                </ul>
+                There are two supplementary data structures used for this algorithm:
+                <ul>
+                    <li>A hash table that maps a parabolic arc segment to the
+                    corresponding potential event in the Sweep Line priority queue.
+                    This is used to make deletion of invalid arc events efficient. <br>
+                    This is implemented as a Closure HashMap</li>
+                    <li>An array of edges in the final voronoi diagram. Array elements
+                    have two properties: one is a pair of edge endpoints and the other
+                    is the pair of points that the edge bisects. This is used to store
+                    the output of the algorithm (both partial and final)</li>
+                </ul>
+                </li>
+                <li> <b> Geometry Module: </b>
+                A separate geometry module (<a href='geometry.js'>geometry.js</a>)was necessary to abstract out the
+                difficult math. This contained simple primitives such as line segment
+                intersection and distance functions. There were two nontrivial functions
+                in this module:
+                <ul>
+                    <li>Calculating the circumcircle of three points, in order to
+                    determine when an arc would disappear (resulting in an ARC event).
+                    </li>
+                    <li>
+                    Calculating the center of a circle tangent to a vertical line and
+                    intersecting two arbitray points. This was necessary in order to
+                    calculate the breakpoints between two adjacent arcs (since
+                    the center of this circle would be equidistant from the sweep line
+                    and the two points generating the parabolic arcs)
+                    </li>
+                </ul>
+                </li>
+                <li> <b> Algorithm Implementation </b>
+                The main function in this implementation processes a single event from
+                the Sweep Line priority queue. It examines events from the top of the
+                queue, discarding previously invalidated ones. Once it finds a valid
+                event, it proceeds as described in <a href='http://www.cs.princeton.edu/courses/archive/spring12/cos423/bib/vor.pdf'>Barr et al</a>. <p> In processing
+                SITE events (hitting a new point), there are two subtleties -
+                searching the beach requires reaching into the "private" variables of
+                the AVL tree for efficient binary search to determine where to insert
+                the new arc for the new point, and keeping the sorted-linked-list
+                structure while constructing the three new arcs requires some
+                careful initialization. <p>
+                Processing ARC events was a little more tricky because the edges of
+                the diagram needed to be tracked. This is achieved by keeping track
+                of the edges being traced out by the beach line. <p>
+                A few edge cases needed to be taken into account when considering
+                potential arc events. There are four edge cases for arc events:
+                the most common is that an arc's generating point is in front of (i.e.
+                has a greater x coordinate than) both of its neighbors, so that
+                the arc never actually disappears and therefore does not generate an
+                arc event. We also disregard events with three adjacent
+                collinear sites, since the bisectors for these sites will never
+                intersect. If the potential event would take place at a location that
+                the sweep line has already passed, then it is certainly invalid, and
+                finally if the circumcenter of three points does not actually lie
+                at the intersection of the three parabolas (an odd geometric case that
+                was only caught with visual debugging) then it is a false event as well.
+                </li>
+            </ul>
+
+            <h3> Graphical Output and Interaction </h3>
+            Much of the graphics primitives were implemented in <a href='interaction.js'>interaction.js</a>, while the interaction code is completely in <a href='voronoi.html'>voronoi.html</a>. The actual drawing code is in <a href='voronoi.js'>voronoi.js</a>.
+
+            <ul>
+                <li>Graphics primitives involved drawing circles, points, parabolic
+                arcs, and lines onto a canvas. Drawing parabolic arcs was an
+                interesting task since the HTML5 canvas only provides a quadratic bezier
+                curve drawing function, and we used
+                <a href='http://alecmce.com/as3/parabolas-and-quadratic-bezier-curves'>
+                http://alecmce.com/as3/parabolas-and-quadratic-bezier-curves</a> as a
+                reference for this. Two edge cases for parabolic arcs were
+                endpoints with the same y-coordinate as the focus, which required us to
+                slightly perturb each endpoint for the quadratice bezier curve to
+                render properly, and a degenerate arc, which is simply a line. <p>
+                The same object responsible for these primitives also maintains the
+                list of points on the canvas as well as the location of the sweep line.
+                </li>
+                <li> Interaction code was very straightforward using jQuery and
+                jQueryUI. The slider element and the overlay for entering a list
+                of points were jQueryUI widgets<li>
+                <li>
+                Drawing the partial diagram on the left of the beach line was the
+                hardest part of the visualization, since it was not described in the
+                readings. The way in which we constructed the edges (one endpoint at a
+                time) allows us to loop through the break points on the beach line
+                and connect them with the appropriate edge endpoints as they trace out
+                the edges; however, for an edge that is being traced out in both
+                directions, we have to keep a reference between the arcs that are
+                tracing out the edge so we can draw the partial edge. Any remaining
+                edges already have both endpoints determined so those are easy to draw.
+                </li>
+            </ul>
+            Note that sliding the slider leftwards usually results in completely
+            recalculating the voronoi diagram up to that point, since there is no
+            simple way to reverse the sweep line.
+    </body>
+</html>

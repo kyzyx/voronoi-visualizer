@@ -90,7 +90,7 @@ Voronoi = function(points) {
         // Determines whether this arc event actually consists of
         // three parabolic arcs intersecting at the same point.
         // There's probably a calculation that can determine this before adding
-        // the event to the queue, but
+        // the event to the queue, but this constant time calculation suffices
         isValidArcEvent:function(arc) {
             var ccenter = circumcenter(arc.p, arc.prev.p, arc.next.p);
             if (!ccenter) return false;
@@ -245,6 +245,7 @@ Voronoi = function(points) {
             var inc = bbox[2] - bbox[0];
             while (that.draw(draw)) {
                 that.moveline(currx + inc);
+                inc *= 2;
             }
         },
         moveline:function(x) {
@@ -261,13 +262,14 @@ Voronoi = function(points) {
         },
         debug:function(draw) {
             var bbox = draw.bounds();
+            var precision = 5;
             // Highlight points on beach
             $("#beach").get(0).value = "";
             $("#evtq").get(0).value = "";
             if (beach.getCount()) {
                 for (var c = beach.getMinimum(); c; c = c.next) {
                     draw.drawPoint(c.p, "#ffff00");
-                    $("#beach").get(0).value += c.d + ": " + "(" + c.p.x + "," + c.p.y + ")\n";
+                    $("#beach").get(0).value += c.d + ": " + "(" + c.p.x.toFixed(precision) + "," + c.p.y.toFixed(precision) + ")\n";
                 }
             }
             var k = pq.getKeys();
@@ -280,29 +282,24 @@ Voronoi = function(points) {
             for (var i = 0; i < kv.length; ++i) {
                 var s = "";
                 if (!kv[i].v.valid) s += "--";
-                s += kv[i].k + ":";
+                s += kv[i].k.toFixed(precision) + ":";
                 if (kv[i].v.type == ARC) {
                     s += " Arc " + kv[i].v.arc.d + " ";
-                    s += kv[i].v.arc.p.x + "," + kv[i].v.arc.p.y;
+                    s += kv[i].v.arc.p.x.toFixed(precision) + "," + kv[i].v.arc.p.y.toFixed(precision);
                 }
                 else {
                     s += " Point ";
-                    s += kv[i].v.p.x + "," + kv[i].v.p.y;
+                    s += kv[i].v.p.x.toFixed(precision) + "," + kv[i].v.p.y.toFixed(precision);
                 }
                 $("#evtq").get(0).value += s + "\n";
             }
         },
         arcInView:function(bbox, p, x) {
+            if (x < bbox[2]) return true;
             var corners = [{x:bbox[2], y:bbox[1]},{x:bbox[2], y:bbox[3]}];
-            //console.log(corners);
-            //console.log(p.x + "," + p.y +  " " + x);
-            for (var i = 0; i < corners.length; ++i) {
-                //console.log(dist2(corners[i], p) + " " +  ((corners[i].x - x)*(corners[i].x - x)));
-                if (dist2(corners[i], p) > (corners[i].x - x)*(corners[i].x - x)) {
-                    return true;
-                }
-            }
-            return false;
+            var in1 = (dist(corners[0], p) > Math.abs(corners[0].x - x))
+            var in2 = (dist(corners[1], p) > Math.abs(corners[1].x - x))
+            return (in1 && in2) || (!in1 && !in2);
         },
         drawBeach:function(draw){
             var bbox = draw.bounds();
