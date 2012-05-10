@@ -4,7 +4,7 @@
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
     <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/ui-lightness/jquery-ui.css">
-    <script src="../closure-library/closure/goog/base.js"></script>
+    <script src='http://closure-library.googlecode.com/svn/trunk/closure/goog/base.js'></script>
     <script src="geometry.js"></script>
     <script src="voronoi.js"></script>
     <script src="interaction.js"></script>
@@ -154,9 +154,9 @@
         <p>Type in one point on each line, with the two coordinates separated
         by whitespace. Invalid lines will be ignored.</p>
         <br>
-        <textarea id="newpoints" rows="8" cols="30"></textarea>
+        <textarea id="newpoints" rows="10" cols="30"></textarea>
     </div>
-    <table><tr>
+    <table cellpadding="8"><tr>
         <td>
             Xmin: <input id="xmin" size=2> Xmax: <input id="xmax" size=2>
             Ymin: <input id="ymin" size=2> Ymax: <input id="ymax" size=2><input type="button" id="updatebounds" value = "Update Bounds"><br>
@@ -168,16 +168,42 @@
             </div>
         </td>
         <td valign="top">
-            <input id="numpts" value="10" size=2>
-            <input id="rand" type="button" value="Generate Random Points">
-            <input id="manual" type="button" value="Manually enter points"><br>
-            <input type="button" id="step" value="Next event">
-            <input type="button" id="animate" value="Animate sweep line">
-            <br>
-            <input type="button" id="complete" value="Compute Voronoi Diagram">
-            <input type="button" id="restart" value="Restart"><br>
-            <textarea id="evtq" rows="12" cols="80"></textarea><br>
-            <textarea id="beach" rows="10" cols="80"></textarea><br>
+            <table cellpadding='4'><tr><td>
+                <h2>Fortune's Algorithm for Voronoi Diagrams</h2>
+                <h3>An Interactive Javascript Implementation </h3>
+            </td><td valign='bottom'>
+                <b> COS423 Final Project by Edward Zhang (edwardz) </b>
+            </td></tr></table>
+            <hr>
+            <u>Step 1: Input: </u>
+            There are three ways of generating input:
+            <ul>
+                <li> Generating random points: <input id="numpts" value="10" size=2> <input id="rand" type="button" value="Generate Random Points"> </li>
+                <li> Manually entering a list of coordinates: <input id="manual" type="button" value="Manually enter points"></li>
+                <li> Clicking on the plane to add points </li>
+            </ul>
+            <hr>
+            <u>Step 2: Running the algorithm</u>
+            There are several ways of viewing the algorithm in progress. The easiest way is to run the animation.
+            <ul>
+                <li> Animate the sweep line from left to right:
+                <input type="button" id="animate" value="Animate sweep line">
+                </li>
+                <li> Drag the sweep line back and forth using the slider underneath the viewport </li>
+                <li> Step from event to event in the priority queue
+                <input type="button" id="step" value="Next event"></li>
+                <li> Go straight to the complete Voronoi Diagram
+                <input type="button" id="complete" value="Compute Voronoi Diagram"> </li>
+                <li> Go back to the beginning of the algorithm <input type="button" id="restart" value="Restart"></li>
+            </ul>
+            <hr>
+            <table><tr>
+                    <td valign='top'> Event queue:</td><td> Beach line: </td>
+                </tr><tr><td>
+                <textarea id="evtq" rows="10" cols="55"></textarea></td><td>
+                <textarea id="beach" rows="10" cols="55"></textarea></td></tr></table>
+    <br>
+          <a href='README.html'>README.html</a>
         </td>
     </tr></table>
 </body>
