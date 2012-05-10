@@ -148,7 +148,7 @@ VoronoiSystem = function(thecanvas, theslider) {
             var sp = that.toScreen(p);
             ctx.fillStyle = color?color:"#000000";
             ctx.beginPath();
-            ctx.arc(sp.x, sp.y, 3, 0, Math.PI*2, true);
+            ctx.arc(sp.x, sp.y, 2, 0, Math.PI*2, true);
             ctx.closePath();
             ctx.fill();
         },
