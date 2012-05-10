@@ -17,8 +17,8 @@ VoronoiSystem = function(thecanvas, theslider) {
             $(window).resize(that.resize);
             that.resize();
             thecanvas.click(function(e) {
-                var x = e.pageX - canvas.offsetLeft;
-                var y = e.pageY - canvas.offsetTop;
+                var x = e.pageX - canvas.offsetLeft - 11;
+                var y = e.pageY - canvas.offsetTop - 11;
                 that.addPoint(that.fromScreen(x, y));
                 that.update();
             });
