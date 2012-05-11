@@ -210,19 +210,42 @@ VoronoiSystem = function(thecanvas, theslider) {
                 that.drawEdge(edges[i]);
             }
         },
-        drawArc:function(focus, directrix, p1, p2, color) {
-            // Ref: http://alecmce.com/as3/parabolas-and-quadratic-bezier-curves
-            var sp1 = that.toScreen(p1);
-            var sp2 = that.toScreen(p2);
-
-            ctx.strokeStyle = color?color:"#ff00ff";
-            ctx.beginPath();
+        drawArc:function(focus, directrix, pt1, pt2, color) {
+            var p1 = {x:pt1.x, y:pt1.y};
+            var p2 = {x:pt2.x, y:pt2.y};
+            // Deal with degenerate arcs
             if (Math.abs(p1.y - p2.y) < EPS) {
-                var sf = that.toScreen(focus);
-                ctx.moveTo(sp1.x, sp1.y);
-                ctx.lineTo(sf.x, sf.y);
+                that.drawEdge({p1:p1, p2:focus}, color?color:"#ff00ff");
             }
             else {
+                // Ref: http://alecmce.com/as3/parabolas-and-quadratic-bezier-curves
+                // Keep edges mostly in bounds, since browsers render large negative
+                // coordinates incorrectly
+                if (p1.x <= bounds[0] && p2.x <= bounds[0]) {
+                    if (p1.y > focus.y && p2.y > focus.y) {
+                        return;
+                    }
+                    if (p1.y < focus.y && p2.y < focus.y) {
+                        return;
+                    }
+                }
+                if (p1.x <= bounds[0]) {
+                    var dx = directrix - bounds[0];
+                    var dx2 = focus.x - bounds[0];
+                    var yy = Math.sqrt(dx*dx - dx2*dx2);
+                    p1.x = bounds[0];
+                    p1.y = focus.y + (p1.y>p2.y?yy:-yy);
+                }
+                if (p2.x <= bounds[0]-1) {
+                    var dx = directrix - bounds[0]+1;
+                    var dx2 = focus.x - bounds[0]+1;
+                    var yy = Math.sqrt(dx*dx - dx2*dx2);
+                    p2.x = bounds[0]-1;
+                    p2.y = focus.y + (p2.y>p1.y?yy:-yy);
+                }
+
+                ctx.strokeStyle = color?color:"#ff00ff";
+                ctx.beginPath();
                 var q1 = {x:directrix,y:p1.y};
                 var q2 = {x:directrix,y:p2.y};
                 var m1 = {x:(q1.x+focus.x)/2,y:(q1.y+focus.y)/2};
@@ -233,17 +256,19 @@ VoronoiSystem = function(thecanvas, theslider) {
                 if (!control) {
                     p1.y += EPS;
                     p2.y += EPS;
-                    q1 = {x:directrix,y:p1.y};
-                    q2 = {x:directrix,y:p2.y};
+                    q1 = {x:directrix, y:p1.y};
+                    q2 = {x:directrix, y:p2.y};
                     m1 = {x:(q1.x+focus.x)/2,y:(q1.y+focus.y)/2};
                     m2 = {x:(q2.x+focus.x)/2,y:(q2.y+focus.y)/2};
                     control = intersection(p1,m1,p2,m2);
                 }
+                var sp1 = that.toScreen(p1);
+                var sp2 = that.toScreen(p2);
                 var sc = that.toScreen(control);
                 ctx.moveTo(sp1.x, sp1.y);
                 ctx.quadraticCurveTo(sc.x, sc.y, sp2.x, sp2.y);
+                ctx.stroke();
             }
-            ctx.stroke();
         },
         // VORONOI INTERACTION FUNCTIONS
         updateSlider:function() {

@@ -93,11 +93,13 @@ Voronoi = function(points) {
         // the event to the queue, but this constant time calculation suffices
         isValidArcEvent:function(arc) {
             var ccenter = circumcenter(arc.p, arc.prev.p, arc.next.p);
-            if (!ccenter) return false;
+            if (!ccenter) {
+                return false;
+            }
             var cradius = circumradius(arc.p, arc.prev.p, arc.next.p);
             var ul = tangentCircle(arc.p, arc.next.p, currx);
             var ll = tangentCircle(arc.prev.p, arc.p, currx);
-            if (Math.abs(ul.x - ll.x) < EPS && Math.abs(ul.y - ll.y) < EPS) {
+            if (dist2(ul,ll) < EPS) {
                 return true;
             }
             return false;
