@@ -34,6 +34,15 @@
             priority queue of potential sweep line events and the current arcs
             on the beach line. The user can click a button to step from event to event.
             <p>
+            There are two cases in which this implementation will err: the
+            obvious one is when the first two input points have the same
+            x-coordinate (which results in no beach line intersection for the
+            second one). The other case(s) are occasionally seen when dealing
+            with large numbers of randomly generated points, where we see
+            floating point error come into play when e.g. detecting arc events
+            or when intersecting arcs. This may cause two points which should be
+            coincident to be sensed as different points, or vice versa.
+            <p>
             This project is implemented entirely in javascript. My implementation of
             Fortune's algorithm relies on the data structures provided by Google's
             <a href='http://code.google.com/p/closure-library/'>Closure</a>
